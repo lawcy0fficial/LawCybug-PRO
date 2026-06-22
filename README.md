@@ -28,6 +28,17 @@
 [![Rules](https://img.shields.io/badge/📜_RULES-287_Bundled-9b59b6?style=for-the-badge)](.)
 [![Detectors](https://img.shields.io/badge/🎯_DETECTORS-16_Active_·_7_Passive-e74c3c?style=for-the-badge)](.)
 [![Lines](https://img.shields.io/badge/💀_SOURCE-~3500_Lines_of_Java-2c3e50?style=for-the-badge)](.)
+[![Engine](https://img.shields.io/badge/🧠_ENGINE-LawcyCore_2.0-8e44ad?style=for-the-badge)](.)
+[![Scanner](https://img.shields.io/badge/🔍_SCANNER-Hybrid_Analysis-3498db?style=for-the-badge)](.)
+[![Payloads](https://img.shields.io/badge/💣_PAYLOADS-15K%2B-c0392b?style=for-the-badge)](.)
+[![Matchers](https://img.shields.io/badge/🎯_MATCHERS-42_Advanced-16a085?style=for-the-badge)](.)
+[![AI](https://img.shields.io/badge/🤖_AI-Assisted_Detection-f39c12?style=for-the-badge)](.)
+[![Performance](https://img.shields.io/badge/⚡_PERFORMANCE-Async_Multi--Threaded-27ae60?style=for-the-badge)](.)
+[![Coverage](https://img.shields.io/badge/🛡️_COVERAGE-OWASP_Top_10-2980b9?style=for-the-badge)](.)
+[![Fuzzing](https://img.shields.io/badge/🧪_FUZZING-Smart_Mutation-e67e22?style=for-the-badge)](.)
+[![Reporting](https://img.shields.io/badge/📊_REPORTING-JSON_·_HTML_·_CSV-34495e?style=for-the-badge)](.)
+[![Severity](https://img.shields.io/badge/🚨_SEVERITY-Critical_Focused-e74c3c?style=for-the-badge)](.)
+
 
 <br>
 
@@ -902,7 +913,7 @@ Enable **Safe Mode** in Settings before scanning any environment where scan acti
 ```
   ╔══════════════════════════════════════════════════════════════════════╗
   ║                                                                      ║
-  ║        🕷️   LawCyBug.pro  ·  v0.2.0-tier1   🕷️                     ║
+  ║        🕷️   LawCyBug.pro  ·  v0.1.0-tier1   🕷️                     ║
   ║                                                                      ║
   ║    16 active detectors  ·  7 passive watchers  ·  287 rules         ║
   ║    ~3,500 lines of Java  ·  28 files  ·  0 dependencies             ║
