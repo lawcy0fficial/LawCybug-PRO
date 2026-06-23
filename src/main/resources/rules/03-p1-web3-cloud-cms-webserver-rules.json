@@ -1,0 +1,1311 @@
+[
+  {
+    "name": "Web3 - Exposed Ethereum Private Key in Response",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "A 64-character hex string prefixed appropriately for an Ethereum/EVM private key was found in the response body, which would allow complete takeover of the associated wallet/contract owner account.",
+    "remediation": "Never serve private keys from any application response. Use a hardware wallet or HSM/KMS for signing operations server-side; rotate the exposed key and migrate any funds/contract ownership immediately.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)['\\\"]?(private_?key|priv_?key)['\\\"]?\\s*[:=]\\s*['\\\"]?0x[a-fA-F0-9]{64}['\\\"]?"
+      }
+    ]
+  },
+  {
+    "name": "Web3 - BIP-39 Mnemonic Seed Phrase Disclosure",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "certain",
+    "description": "A sequence of 12 or 24 space-separated lowercase words consistent with a BIP-39 wallet mnemonic seed phrase was found in the response, which grants full control over all derived wallets.",
+    "remediation": "Never store or transmit seed phrases through application logic. Treat any exposed mnemonic as fully compromised: move funds and revoke contract permissions immediately.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "\\b([a-z]+\\s+){11,23}[a-z]+\\b(?=[\\s\\\"',]*(?:\\\"|'|,|\\}|$))"
+      }
+    ]
+  },
+  {
+    "name": "Web3 - Infura/Alchemy RPC Project ID Exposure",
+    "type": "passive",
+    "severity": "medium",
+    "confidence": "firm",
+    "description": "A hardcoded Infura or Alchemy project/API ID embedded in a client-served response can be abused to exhaust the project's request quota or pivot to billing abuse.",
+    "remediation": "Proxy RPC calls through a server-side endpoint that injects the provider key, rather than shipping it to the client; apply per-origin allow-listing on the provider dashboard.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)(infura\\.io/v3/|alchemyapi\\.io/v2/|alchemy\\.com/v2/)[a-zA-Z0-9_-]{20,}"
+      }
+    ]
+  },
+  {
+    "name": "Web3 - Unauthenticated JSON-RPC Node Exposing eth_accounts",
+    "type": "active",
+    "severity": "high",
+    "confidence": "certain",
+    "description": "A direct JSON-RPC call to eth_accounts on a publicly reachable node returned populated unlocked account addresses, meaning anyone can sign/send transactions from those accounts without authentication.",
+    "remediation": "Never expose an unlocked node's JSON-RPC interface publicly. Bind RPC to localhost/internal network, disable eth_accounts/personal_* methods externally, and require authentication for any exposed RPC gateway.",
+    "conditions": [
+      {
+        "payload": "{\"jsonrpc\":\"2.0\",\"method\":\"eth_accounts\",\"params\":[],\"id\":1}",
+        "match": "response_body",
+        "pattern": "\\\"result\\\"\\s*:\\s*\\[\\s*\\\"0x[a-fA-F0-9]{40}\\\""
+      }
+    ]
+  },
+  {
+    "name": "Web3 - JSON-RPC personal_unlockAccount Reachable",
+    "type": "active",
+    "severity": "high",
+    "confidence": "certain",
+    "description": "The personal_unlockAccount RPC method was reachable and did not return a method-disabled error, indicating an attacker could unlock and drain any account on this node.",
+    "remediation": "Disable all personal_* RPC namespace methods on any publicly reachable endpoint; restrict node admin APIs to a private management network.",
+    "conditions": [
+      {
+        "payload": "{\"jsonrpc\":\"2.0\",\"method\":\"personal_unlockAccount\",\"params\":[\"0x0000000000000000000000000000000000000000\",\"\",300],\"id\":1}",
+        "match": "response_body",
+        "pattern": "\\\"result\\\"\\s*:\\s*true"
+      }
+    ]
+  },
+  {
+    "name": "Web3 - Smart Contract Source Verification Reveals Owner-Only Backdoor Pattern",
+    "type": "passive",
+    "severity": "medium",
+    "confidence": "tentative",
+    "description": "Verified contract source code returned by an explorer API contains an onlyOwner-gated function with a generic name (e.g. emergencyWithdraw, rescueTokens) that allows the owner to drain arbitrary ERC-20 balances from the contract \u2014 a common rug-pull/backdoor pattern. Manual review of the function's actual logic is required.",
+    "remediation": "Avoid unrestricted owner-only withdrawal functions in production contracts; use timelocks, multisig governance, and clearly scoped recovery functions audited by a third party.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)function\\s+(emergencyWithdraw|rescueTokens|withdrawAll|drainContract)\\s*\\([^)]*\\)\\s*(external|public)[^{]*onlyOwner"
+      }
+    ]
+  },
+  {
+    "name": "Web3 - Hardhat/Truffle Config with Private Key Committed",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "A hardhat.config.js / truffle-config.js style file is exposed containing a hardcoded private key or mnemonic used for network deployment accounts.",
+    "remediation": "Remove deployment private keys from config files; load them from environment variables / a secrets manager that is never bundled or served from the web root.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)(accounts\\s*:\\s*\\[\\s*['\\\"]0x[a-fA-F0-9]{64}['\\\"]|mnemonic\\s*:\\s*['\\\"]([a-z]+\\s+){11,23}[a-z]+['\\\"])"
+      }
+    ]
+  },
+  {
+    "name": "Web3 - Wallet Connect / MetaMask Session Token Leak",
+    "type": "passive",
+    "severity": "medium",
+    "confidence": "firm",
+    "description": "A WalletConnect session/pairing topic and key appear directly in the response body, which could allow session hijacking of a connected wallet if intercepted.",
+    "remediation": "Never persist or transmit WalletConnect session keys through server responses; keep pairing state client-side only and use short-lived sessions.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)\\\"(topic|sessionKey)\\\"\\s*:\\s*\\\"[a-f0-9]{64}\\\""
+      }
+    ]
+  },
+  {
+    "name": "Web3 - Reentrancy-Prone External Call Before State Update",
+    "type": "passive",
+    "severity": "medium",
+    "confidence": "tentative",
+    "description": "Exposed contract source shows an external call (e.g. .call/.transfer to a user-supplied address) appearing before the corresponding balance/state variable is updated in the same function \u2014 the classic reentrancy ordering bug pattern. Requires manual confirmation via static/dynamic analysis (e.g. Slither/Echidna).",
+    "remediation": "Follow checks-effects-interactions: update all state before making external calls, and apply a reentrancy guard (nonReentrant modifier) to any function performing external value transfers.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)\\.call\\{value:[^}]*\\}\\([^)]*\\)[\\s\\S]{0,150}balances?\\[[^\\]]+\\]\\s*-?=\\s*"
+      }
+    ]
+  },
+  {
+    "name": "Web3 - Predictable randomness via block.timestamp/blockhash",
+    "type": "passive",
+    "severity": "medium",
+    "confidence": "tentative",
+    "description": "Exposed contract source derives a 'random' outcome from block.timestamp, block.number, or blockhash, all of which are known/influenceable by miners/validators and front-runnable by other transactions in the same block.",
+    "remediation": "Use a verifiable randomness source (e.g. Chainlink VRF) rather than block attributes for any outcome with financial value.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)(keccak256|sha3)\\([^)]*\\b(block\\.timestamp|block\\.number|blockhash)\\b"
+      }
+    ]
+  },
+  {
+    "name": "Web3 - Unprotected ERC-20 approve() Front-Running Pattern",
+    "type": "passive",
+    "severity": "low",
+    "confidence": "tentative",
+    "description": "Contract source updates an allowance via approve() without a corresponding increaseAllowance/decreaseAllowance safe pattern, which is vulnerable to the well-known ERC-20 approve front-running race condition.",
+    "remediation": "Use increaseAllowance/decreaseAllowance (or the permit/EIP-2612 pattern) instead of raw approve() for any allowance change after an initial non-zero approval.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)function\\s+approve\\s*\\(\\s*address\\s+\\w+,\\s*uint256\\s+\\w+\\s*\\)\\s*(external|public)[^{]*\\{(?:(?!increaseAllowance)[\\s\\S]){0,200}\\}"
+      }
+    ]
+  },
+  {
+    "name": "Web3 - IPFS Gateway Open Pin/Upload Without Auth",
+    "type": "active",
+    "severity": "medium",
+    "confidence": "tentative",
+    "description": "An IPFS gateway's /api/v0/add endpoint accepted an unauthenticated pin/upload request, allowing arbitrary content (including malware/illegal content) to be hosted and pinned at the operator's expense and reputational risk.",
+    "remediation": "Require authentication on write endpoints (/api/v0/add, /api/v0/pin/*) and expose only the read-only gateway publicly.",
+    "conditions": [
+      {
+        "payload": "lawcybug-ipfs-upload-test",
+        "match": "response_body",
+        "pattern": "\\\"Hash\\\"\\s*:\\s*\\\"Qm[1-9A-HJ-NP-Za-km-z]{44}\\\""
+      }
+    ]
+  },
+  {
+    "name": "Web3 - GraphQL Subgraph Exposes Internal Indexer Admin Mutations",
+    "type": "passive",
+    "severity": "medium",
+    "confidence": "tentative",
+    "description": "A blockchain indexer's (e.g. The Graph) GraphQL schema response includes admin-style mutations (e.g. _meta with block override, or rewind/prune operations) reachable on the public endpoint.",
+    "remediation": "Expose only query operations on the public subgraph endpoint; restrict admin/indexing mutations to an internal management API.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)\\\"name\\\"\\s*:\\s*\\\"(subgraph_?(rewind|reassign|pause))\\\""
+      }
+    ]
+  },
+  {
+    "name": "Web3 - Centralized Price Oracle Single Source of Truth",
+    "type": "passive",
+    "severity": "medium",
+    "confidence": "tentative",
+    "description": "Contract source reads price data from a single external call without TWAP, multiple oracle aggregation, or staleness checks, making it manipulable via flash-loan-funded price swings on a single DEX pool.",
+    "remediation": "Use a decentralized/TWAP oracle (e.g. Chainlink Price Feeds or a time-weighted average from multiple pools) and validate price data freshness before use in financial logic.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)function\\s+getPrice\\s*\\([^)]*\\)[^{]*\\{[\\s\\S]{0,150}\\.latestAnswer\\(\\)|getReserves\\(\\)"
+      }
+    ]
+  },
+  {
+    "name": "Web3 - NFT Metadata Pointing to Mutable Centralized URL",
+    "type": "passive",
+    "severity": "low",
+    "confidence": "tentative",
+    "description": "An NFT's tokenURI resolves to a centralized HTTP(S) endpoint rather than an immutable content-addressed location (IPFS CID/Arweave), allowing the project owner to silently swap metadata/images post-mint.",
+    "remediation": "Store NFT metadata and assets on immutable, content-addressed storage (IPFS with pinning, Arweave) and reference them via tokenURI using their content hash.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)\\\"tokenURI\\\"\\s*:\\s*\\\"https?://(?!.*?(ipfs|arweave))[^\\\"]+\\\""
+      }
+    ]
+  },
+  {
+    "name": "Cloud - S3 Bucket Public List Permission (ListBucketResult)",
+    "type": "active",
+    "severity": "high",
+    "confidence": "certain",
+    "description": "An unauthenticated request to the S3 bucket endpoint returned a ListBucketResult XML document enumerating object keys, confirming the bucket allows public listing.",
+    "remediation": "Apply the S3 Block Public Access settings account-wide and scope bucket policies/ACLs to specific principals; never rely on 'security through obscurity' bucket names.",
+    "conditions": [
+      {
+        "payload": "?list-type=2",
+        "match": "response_body",
+        "pattern": "<ListBucketResult[^>]*xmlns=\\\"http://s3\\.amazonaws\\.com/doc/"
+      }
+    ]
+  },
+  {
+    "name": "Cloud - S3 Bucket Public Write Permission",
+    "type": "active",
+    "severity": "high",
+    "confidence": "certain",
+    "description": "A PUT request to an object path on the bucket succeeded without authentication, confirming public write access \u2014 allowing defacement, malware hosting, or ransomware-style overwrite of existing objects.",
+    "remediation": "Remove public write ACLs/policies; require IAM-authenticated requests with a least-privilege role for all write operations.",
+    "conditions": [
+      {
+        "payload": "lawcybug-s3-write-test",
+        "match": "status",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "name": "Cloud - GCP Storage Bucket Public via allUsers ACL",
+    "type": "active",
+    "severity": "high",
+    "confidence": "certain",
+    "description": "The GCS bucket's JSON API responded with object listing data to an unauthenticated request, indicating the allUsers principal has been granted read access at the bucket or object level.",
+    "remediation": "Remove allUsers/allAuthenticatedUsers bindings from IAM policy unless the bucket is intentionally a public CDN origin; enable Bucket Policy Only and organization policy constraints to prevent public buckets.",
+    "conditions": [
+      {
+        "payload": "?alt=json",
+        "match": "response_body",
+        "pattern": "\\\"kind\\\"\\s*:\\s*\\\"storage#objects\\\""
+      }
+    ]
+  },
+  {
+    "name": "Cloud - Azure Blob Container Public Anonymous Access",
+    "type": "active",
+    "severity": "high",
+    "confidence": "certain",
+    "description": "Listing the Azure Blob container anonymously (?restype=container&comp=list) succeeded, returning an EnumerationResults document, confirming the container's public access level allows anonymous listing.",
+    "remediation": "Set the container's public access level to Private and use SAS tokens or Azure AD auth for any legitimate external access needs.",
+    "conditions": [
+      {
+        "payload": "?restype=container&comp=list",
+        "match": "response_body",
+        "pattern": "<EnumerationResults"
+      }
+    ]
+  },
+  {
+    "name": "Cloud - Exposed Kubernetes Dashboard Without Authentication",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "certain",
+    "description": "The Kubernetes Dashboard UI/API is reachable without authentication, exposing full cluster state and (depending on RBAC) the ability to deploy/exec into pods, equivalent to full cluster compromise.",
+    "remediation": "Never expose the Kubernetes Dashboard outside a VPN/bastion; enforce RBAC and OIDC/token authentication, and disable the deprecated --enable-skip-login flag.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)\\\"kind\\\"\\s*:\\s*\\\"(Pod|Deployment)List\\\"[\\s\\S]{0,200}\\\"apiVersion\\\""
+      }
+    ]
+  },
+  {
+    "name": "Cloud - Exposed etcd API Without Authentication",
+    "type": "active",
+    "severity": "high",
+    "confidence": "certain",
+    "description": "An unauthenticated request to the etcd v3 API's /v3/kv/range endpoint returned cluster key-value data, exposing the entire Kubernetes cluster's secrets/configuration (etcd is the cluster's source of truth).",
+    "remediation": "Require client certificate authentication (mTLS) for all etcd access and bind etcd to a private network segment only, never publicly.",
+    "conditions": [
+      {
+        "payload": "{\"key\":\"Lw==\"}",
+        "match": "response_body",
+        "pattern": "\\\"kvs\\\"\\s*:\\s*\\["
+      }
+    ]
+  },
+  {
+    "name": "Cloud - Docker Remote API Exposed Without TLS",
+    "type": "active",
+    "severity": "high",
+    "confidence": "certain",
+    "description": "The Docker Engine API (/version or /containers/json) was reachable unauthenticated over plain HTTP, allowing an attacker to enumerate, start, or create privileged containers \u2014 equivalent to host root compromise.",
+    "remediation": "Never expose the Docker daemon socket over the network without mTLS client-certificate authentication; bind it to a Unix socket or require an authenticated proxy.",
+    "conditions": [
+      {
+        "payload": "/version",
+        "match": "response_body",
+        "pattern": "\\\"ApiVersion\\\"\\s*:\\s*\\\""
+      }
+    ]
+  },
+  {
+    "name": "Cloud - Jenkins Script Console Reachable Without Auth",
+    "type": "active",
+    "severity": "high",
+    "confidence": "certain",
+    "description": "The Jenkins /script console endpoint accepted an unauthenticated Groovy script execution request, confirming full remote code execution on the CI/CD server (and likely pivot access to all connected build agents/credentials).",
+    "remediation": "Require authentication and authorization (matrix-based security) on all Jenkins endpoints, especially /script; disable anonymous read/admin access entirely.",
+    "conditions": [
+      {
+        "payload": "script=println+\"lawcybug-jenkins-rce-test\"",
+        "match": "response_body",
+        "pattern": "lawcybug-jenkins-rce-test"
+      }
+    ]
+  },
+  {
+    "name": "Cloud - Consul Agent API Exposed Without ACLs",
+    "type": "active",
+    "severity": "high",
+    "confidence": "certain",
+    "description": "The Consul HTTP API's /v1/agent/self endpoint returned full agent configuration without an ACL token, indicating the service mesh control plane is reachable by anyone on the network path, exposing service topology and enabling service deregistration/poisoning.",
+    "remediation": "Enable Consul ACLs in default-deny mode and require a valid token for all API access; bind the HTTP API to a private interface.",
+    "conditions": [
+      {
+        "payload": "/v1/agent/self",
+        "match": "response_body",
+        "pattern": "\\\"Config\\\"\\s*:\\s*\\{[\\s\\S]{0,200}\\\"Datacenter\\\""
+      }
+    ]
+  },
+  {
+    "name": "Cloud - Elasticsearch Index Exposed Without Authentication",
+    "type": "active",
+    "severity": "high",
+    "confidence": "certain",
+    "description": "A request to /_cat/indices or /_search on the Elasticsearch HTTP API succeeded without authentication, exposing all indexed documents (often logs, PII, or application data) and permitting index deletion.",
+    "remediation": "Enable Elasticsearch security features (TLS + authentication) and never expose port 9200 directly to the internet; place it behind an authenticated proxy/VPN.",
+    "conditions": [
+      {
+        "payload": "/_cat/indices?v",
+        "match": "response_body",
+        "pattern": "(?i)health\\s+status\\s+index"
+      }
+    ]
+  },
+  {
+    "name": "Cloud - Redis Instance Exposed Without Authentication",
+    "type": "active",
+    "severity": "high",
+    "confidence": "certain",
+    "description": "An unauthenticated INFO command against the Redis instance returned server statistics, confirming no AUTH/requirepass is configured \u2014 allowing full data read/write and, via well-known techniques, potential RCE on the host.",
+    "remediation": "Set requirepass (or use Redis 6+ ACLs) on every Redis instance, bind to a private interface, and disable dangerous commands (CONFIG, FLUSHALL) for non-admin ACL users.",
+    "conditions": [
+      {
+        "payload": "INFO\r\n",
+        "match": "response_body",
+        "pattern": "(?i)redis_version:"
+      }
+    ]
+  },
+  {
+    "name": "Cloud - Memcached Exposed to Internet (Amplification/Data Leak Risk)",
+    "type": "active",
+    "severity": "high",
+    "confidence": "certain",
+    "description": "A 'stats' command against the Memcached service over UDP/TCP returned server statistics without authentication, indicating the instance is internet-reachable and could be abused both for data leakage and as a DDoS amplification vector.",
+    "remediation": "Bind Memcached to localhost/private network only; never expose UDP port 11211 publicly, and disable the UDP protocol entirely if not required.",
+    "conditions": [
+      {
+        "payload": "stats\r\n",
+        "match": "response_body",
+        "pattern": "(?i)STAT pid \\d+"
+      }
+    ]
+  },
+  {
+    "name": "Cloud - CI/CD Pipeline Variables Echoed in Build Log",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "A publicly accessible CI/CD build log echoes environment variable values that match secret-naming conventions (e.g. *_TOKEN, *_SECRET) instead of being masked, leaking deployment credentials.",
+    "remediation": "Mark all secret-like CI/CD variables as 'protected'/'masked' in the pipeline configuration so the runner redacts them from logs automatically, and rotate any value found unmasked.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)(?:export\\s+)?\\w*(TOKEN|SECRET|API_KEY|PASSWORD)\\w*\\s*=\\s*[^\\s$][^\\s]{8,}"
+      }
+    ]
+  },
+  {
+    "name": "Cloud - Terraform State File Exposed with Plaintext Secrets",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "certain",
+    "description": "A Terraform .tfstate file is reachable and contains resource attributes in plaintext, which commonly include database passwords, private keys, and other provisioned secrets in the 'attributes' block.",
+    "remediation": "Never store .tfstate in a publicly readable location; use a remote backend with encryption at rest and strict access control (e.g. S3 backend with bucket policy + KMS, or Terraform Cloud).",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "\\\"terraform_version\\\"\\s*:\\s*\\\"[\\d.]+\\\"[\\s\\S]{0,500}\\\"attributes\\\""
+      }
+    ]
+  },
+  {
+    "name": "Cloud - Serverless Function Source Code Leak via Misconfigured Deployment Bucket",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "A request to the deployment artifact path returned what appears to be a packaged Lambda/Cloud Function zip listing or raw source, exposing application logic, embedded credentials, and internal API contracts.",
+    "remediation": "Restrict access to function deployment artifact storage to the build/deploy pipeline's service identity only; never make deployment buckets public.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)(exports\\.handler\\s*=|def lambda_handler\\s*\\()"
+      }
+    ]
+  },
+  {
+    "name": "Cloud - CloudFront/CDN Origin Bypass via Direct Origin Access",
+    "type": "active",
+    "severity": "medium",
+    "confidence": "tentative",
+    "description": "Requesting the resource directly against the discovered origin server (bypassing the CDN/WAF in front of it) returned the same content, indicating the origin lacks an allow-list restricting traffic to only the CDN's IP ranges/secret header, allowing WAF bypass.",
+    "remediation": "Restrict the origin to accept traffic only from the CDN's published IP ranges or a shared secret header (e.g. CloudFront custom header) validated at the origin/load balancer.",
+    "conditions": [
+      {
+        "payload": "X-Origin-Direct-Test: lawcybug",
+        "match": "status",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "name": "WordPress - User Enumeration via REST API",
+    "type": "active",
+    "severity": "low",
+    "confidence": "certain",
+    "description": "The /wp-json/wp/v2/users endpoint returned a list of registered usernames without authentication, which significantly aids password-spraying/brute-force attacks against real accounts.",
+    "remediation": "Restrict the REST users endpoint to authenticated requests, or remove the 'name'/'slug' fields for unauthenticated callers via a filter on rest_prepare_user.",
+    "conditions": [
+      {
+        "payload": "/wp-json/wp/v2/users",
+        "match": "response_body",
+        "pattern": "\\\"slug\\\"\\s*:\\s*\\\"[\\w-]+\\\"[\\s\\S]{0,100}\\\"link\\\"\\s*:\\s*\\\".*?/author/"
+      }
+    ]
+  },
+  {
+    "name": "WordPress - XML-RPC pingback.ping SSRF/Amplification",
+    "type": "active",
+    "severity": "medium",
+    "confidence": "certain",
+    "description": "The xmlrpc.php endpoint accepted a pingback.ping method call referencing an attacker-controlled URL, confirming XML-RPC is enabled and can be abused for SSRF probing and DDoS amplification (pingback flood).",
+    "remediation": "Disable XML-RPC entirely if not required (block /xmlrpc.php), or at minimum disable the pingback methods via a plugin/filter.",
+    "conditions": [
+      {
+        "payload": "<?xml version=\"1.0\"?><methodCall><methodName>pingback.ping</methodName><params><param><value>http://lawcybug-ssrf-test.example.com</value></param><param><value>http://target/</value></param></params></methodCall>",
+        "match": "status",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "name": "WordPress - Plugin Directory Listing Reveals Installed Plugins/Versions",
+    "type": "passive",
+    "severity": "low",
+    "confidence": "firm",
+    "description": "Directory listing is enabled under /wp-content/plugins/, allowing enumeration of every installed plugin and (via readme.txt) its exact version for targeted CVE lookup.",
+    "remediation": "Disable directory listing (Options -Indexes) on all wp-content subdirectories and remove/restrict access to plugin readme.txt files.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)<title>Index of /wp-content/plugins"
+      }
+    ]
+  },
+  {
+    "name": "WordPress - Outdated Core Version with Known CVEs",
+    "type": "passive",
+    "severity": "medium",
+    "confidence": "tentative",
+    "description": "The generator meta tag discloses a WordPress core version that is several minor releases behind current, which likely has unpatched publicly known vulnerabilities. Cross-reference the exact version against the WPVulnDB/CVE feed.",
+    "remediation": "Keep WordPress core, themes, and plugins updated via an automated patch management process; remove the generator meta tag to reduce fingerprinting.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)<meta name=\\\"generator\\\" content=\\\"WordPress (\\d+\\.\\d+)"
+      }
+    ]
+  },
+  {
+    "name": "Drupal - Drupalgeddon-Style Form API AJAX RCE Signature",
+    "type": "active",
+    "severity": "high",
+    "confidence": "certain",
+    "description": "A crafted Form API AJAX request with manipulated #ajax callback properties triggered server-side PHP code execution evidence in the response, consistent with the Drupalgeddon2-class vulnerability (CVE-2018-7600/related).",
+    "remediation": "Apply all Drupal Security Advisory patches promptly; upgrade to a maintained core version and run the Drupal core integrity check after any suspected compromise.",
+    "conditions": [
+      {
+        "payload": "form_id=user_register_form&_drupal_ajax=1&mail[#post_render][]=exec&mail[#type]=markup&mail[#markup]=echo+lawcybug-drupal-rce-test;",
+        "match": "response_body",
+        "pattern": "lawcybug-drupal-rce-test"
+      }
+    ]
+  },
+  {
+    "name": "Drupal - JSON:API Unauthenticated Node Enumeration",
+    "type": "active",
+    "severity": "low",
+    "confidence": "firm",
+    "description": "The /jsonapi/node/article (or similar) endpoint returned unpublished or restricted content fields without authentication, indicating the JSON:API module's field-level access checks are misconfigured.",
+    "remediation": "Apply field-level access restrictions and disable the JSON:API module on entity types that don't require it; audit per-field 'View' permissions for the anonymous role.",
+    "conditions": [
+      {
+        "payload": "/jsonapi/node/article",
+        "match": "response_body",
+        "pattern": "\\\"data\\\"\\s*:\\s*\\[\\s*\\{\\s*\\\"type\\\"\\s*:\\s*\\\"node--article\\\""
+      }
+    ]
+  },
+  {
+    "name": "Joomla - com_users Mass Password Reset Token Predictability",
+    "type": "active",
+    "severity": "medium",
+    "confidence": "tentative",
+    "description": "Two sequential password-reset requests produced reset tokens with a low-entropy/sequential pattern, suggesting the token generation in com_users is predictable and brute-forceable.",
+    "remediation": "Use a cryptographically secure random generator (random_bytes) for all reset tokens, with sufficient length (>=32 bytes) and single-use, time-limited validity.",
+    "conditions": [
+      {
+        "payload": "lawcybug-reset-token-entropy-test",
+        "match": "status",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "name": "Joomla - Outdated Version Disclosed via /administrator/manifests/files/joomla.xml",
+    "type": "passive",
+    "severity": "low",
+    "confidence": "firm",
+    "description": "The Joomla core manifest file is publicly readable and discloses the exact installed version, aiding targeted CVE exploitation.",
+    "remediation": "Restrict access to administrator manifest files via web server rules; keep Joomla core updated.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)<version>[\\d.]+</version>[\\s\\S]{0,100}<creationDate>"
+      }
+    ]
+  },
+  {
+    "name": "Magento - Admin Panel Default Path Reachable Without Rate Limiting",
+    "type": "active",
+    "severity": "medium",
+    "confidence": "tentative",
+    "description": "Ten sequential incorrect login attempts against /admin/admin/auth/login were all accepted without lockout/CAPTCHA, indicating brute-force protection is not enforced on the Magento admin panel.",
+    "remediation": "Move the admin panel to a custom, non-default path, enforce account lockout after N failed attempts, and require 2FA for all admin accounts.",
+    "conditions": [
+      {
+        "payload": "login[username]=admin&login[password]=lawcybug-wrong-password",
+        "match": "status",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "name": "Shopify/Liquid - Server-Side Template Injection via Liquid Objects",
+    "type": "active",
+    "severity": "high",
+    "confidence": "certain",
+    "description": "A Liquid template expression payload (e.g. {{ 7 | times: 7 }}) was evaluated and its result reflected in the response, confirming unsafe rendering of user input through the Liquid template engine.",
+    "remediation": "Never pass user-controlled strings into Liquid's render/parse functions; use the 'escape' filter and avoid dynamic template construction from request input.",
+    "conditions": [
+      {
+        "payload": "{{ 7 | times: 7 }}",
+        "match": "response_body",
+        "pattern": "(?<![0-9])49(?![0-9])"
+      }
+    ]
+  },
+  {
+    "name": "Generic CMS - Unrestricted Admin Login Page Brute-Force (No Lockout/Captcha)",
+    "type": "active",
+    "severity": "medium",
+    "confidence": "tentative",
+    "description": "Multiple sequential failed login attempts against the CMS admin login endpoint all returned a normal failure response without any rate limiting, lockout, or CAPTCHA challenge appearing.",
+    "remediation": "Implement account lockout after a small number of failed attempts, progressive delays, and CAPTCHA/2FA on all CMS admin authentication endpoints.",
+    "conditions": [
+      {
+        "payload": "username=admin&password=lawcybug-bruteforce-test",
+        "match": "status",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "name": "Generic CMS - Backup File Left in Web Root (.zip/.tar.gz/.sql/.bak)",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "A backup archive or database dump with a predictable naming pattern is directly downloadable from the web root, often containing the full database (including password hashes) and source code.",
+    "remediation": "Never store backups inside the web-served document root; use a dedicated backup storage location outside the web server's serving path with strict access control.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)(content-disposition:\\s*attachment.*?\\.(sql|bak|zip|tar\\.gz|tgz))"
+      }
+    ]
+  },
+  {
+    "name": "Webserver - Apache mod_status Publicly Accessible",
+    "type": "active",
+    "severity": "medium",
+    "confidence": "certain",
+    "description": "The /server-status endpoint is reachable without authentication, exposing real-time request details including in-flight URLs, client IPs, and sometimes query strings/session identifiers of other users.",
+    "remediation": "Restrict /server-status to localhost only via Apache <Location> access control, or disable mod_status entirely in production.",
+    "conditions": [
+      {
+        "payload": "/server-status",
+        "match": "response_body",
+        "pattern": "(?i)Apache Server Status for"
+      }
+    ]
+  },
+  {
+    "name": "Webserver - Apache mod_info Publicly Accessible",
+    "type": "active",
+    "severity": "medium",
+    "confidence": "certain",
+    "description": "The /server-info endpoint discloses the full Apache server configuration including loaded modules and their settings, aiding targeted exploitation.",
+    "remediation": "Restrict /server-info to localhost only, or disable mod_info entirely in production.",
+    "conditions": [
+      {
+        "payload": "/server-info",
+        "match": "response_body",
+        "pattern": "(?i)Server Information for"
+      }
+    ]
+  },
+  {
+    "name": "Webserver - Directory Listing Enabled",
+    "type": "passive",
+    "severity": "low",
+    "confidence": "certain",
+    "description": "Directory listing (autoindex) is enabled for this path, exposing the full file structure including potentially sensitive files not linked from the application.",
+    "remediation": "Disable directory autoindexing (Options -Indexes in Apache, autoindex off in nginx) on all web-served directories.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)<title>Index of /[^<]*</title>"
+      }
+    ]
+  },
+  {
+    "name": "Webserver - Nginx alias/location Path Traversal Misconfiguration",
+    "type": "active",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "A request exploiting a missing trailing slash between an nginx 'location' block and its 'alias' directive successfully traversed outside the intended directory, retrieving a file outside the served path.",
+    "remediation": "Always match a trailing slash on both the location and alias paths (or use 'root' instead of 'alias' where possible) to prevent this classic nginx misconfiguration.",
+    "conditions": [
+      {
+        "payload": "/static../../../etc/passwd",
+        "match": "response_body",
+        "pattern": "root:.*?:0:0:"
+      }
+    ]
+  },
+  {
+    "name": "Webserver - IIS Short Filename (8.3) Disclosure",
+    "type": "active",
+    "severity": "low",
+    "confidence": "firm",
+    "description": "A request using a tilde-based short-filename pattern (~1) against IIS returned a response distinguishable from a true 404, confirming short-filename enumeration is possible and can reveal sensitive file/directory names.",
+    "remediation": "Disable 8.3 short filename generation at the NTFS volume level (fsutil 8dot3name set 1) and remove existing short names, or apply the UrlScan/Request Filtering rule blocking '~' in URLs.",
+    "conditions": [
+      {
+        "payload": "/admin~1/",
+        "match": "status",
+        "status": 404
+      }
+    ]
+  },
+  {
+    "name": "Webserver - WebDAV PROPFIND/PUT Enabled",
+    "type": "active",
+    "severity": "medium",
+    "confidence": "firm",
+    "description": "A PROPFIND or PUT request against the web server succeeded, confirming WebDAV is enabled, which can permit arbitrary file upload (leading to RCE if the upload directory is executable) or sensitive directory structure enumeration.",
+    "remediation": "Disable the WebDAV module entirely on production web servers unless explicitly required, and if required, enforce strict authentication and disable PUT/DELETE methods.",
+    "conditions": [
+      {
+        "payload": "PROPFIND / HTTP/1.1",
+        "match": "status",
+        "status": 207
+      }
+    ]
+  },
+  {
+    "name": "Webserver - HTTP TRACE Method Enabled (XST)",
+    "type": "active",
+    "severity": "low",
+    "confidence": "firm",
+    "description": "The server responded to an HTTP TRACE request by echoing the request back verbatim, confirming the TRACE method is enabled and could be combined with XSS to bypass HttpOnly cookie protections (Cross-Site Tracing).",
+    "remediation": "Disable the TRACE (and TRACK) HTTP methods at the web server configuration level.",
+    "conditions": [
+      {
+        "payload": "TRACE / HTTP/1.1",
+        "match": "response_body",
+        "pattern": "(?i)TRACE / HTTP/1\\.1"
+      }
+    ]
+  },
+  {
+    "name": "Webserver - .htaccess File Publicly Readable",
+    "type": "passive",
+    "severity": "medium",
+    "confidence": "firm",
+    "description": "An .htaccess file is directly retrievable over HTTP, which can reveal access-control rules, rewrite logic, and sometimes embedded credentials for protected directories.",
+    "remediation": "Add a server-level rule denying access to all dotfiles (e.g. <Files \"~^\\.\"> Require all denied in Apache), independent of per-directory .htaccess rules.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)^\\s*(RewriteEngine|AuthType|AuthUserFile|Order (allow|deny))"
+      }
+    ]
+  },
+  {
+    "name": "Webserver - Default/Sample Application Pages Left Installed",
+    "type": "passive",
+    "severity": "low",
+    "confidence": "firm",
+    "description": "A default installation page (e.g. 'It works!', default Tomcat/IIS welcome page, phpinfo()) is reachable, confirming default content was never removed and may expose configuration details (phpinfo especially leaks extensive environment data).",
+    "remediation": "Remove all default/sample pages and phpinfo.php-style diagnostic scripts before deploying to production.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)(phpinfo\\(\\)|<title>Apache Tomcat.*?</title>\\s*<h1>If you're seeing this|IIS Windows Server)"
+      }
+    ]
+  },
+  {
+    "name": "Webserver - Outdated TLS Protocol Negotiated (SSLv3/TLS 1.0/1.1 indicator)",
+    "type": "passive",
+    "severity": "medium",
+    "confidence": "tentative",
+    "description": "Response headers or a Strict-Transport-Security absence pattern combined with legacy server banners suggest the server may still negotiate deprecated TLS versions. Confirm directly with an SSL/TLS scan (e.g. testssl.sh), as this single-request rule only flags a weak proxy signal.",
+    "remediation": "Disable SSLv3, TLS 1.0, and TLS 1.1 entirely; support only TLS 1.2+ with modern cipher suites.",
+    "conditions": [
+      {
+        "target": "response_header",
+        "pattern": "(?i)^Server:\\s*(Apache/1\\.|Apache/2\\.0\\.|Microsoft-IIS/6\\.0|Microsoft-IIS/7\\.0)"
+      }
+    ]
+  },
+  {
+    "name": "Webserver - HTTP/2 Request Smuggling via Header Duplication",
+    "type": "active",
+    "severity": "high",
+    "confidence": "tentative",
+    "description": "Sending duplicate Content-Length headers over an HTTP/2 connection that gets downgraded to HTTP/1.1 toward the backend produced an unexpected response, indicating possible h2.CL request smuggling at the protocol-translation boundary.",
+    "remediation": "Ensure the HTTP/2-to-HTTP/1.1 translating proxy strictly rejects ambiguous/duplicate Content-Length and Transfer-Encoding headers rather than forwarding them.",
+    "conditions": [
+      {
+        "payload": "Content-Length: 10\r\nContent-Length: 20",
+        "match": "status",
+        "status": 400
+      }
+    ]
+  },
+  {
+    "name": "Webserver - Apache Multiviews Content-Type Negotiation File Disclosure",
+    "type": "active",
+    "severity": "medium",
+    "confidence": "tentative",
+    "description": "Requesting a base filename without extension under a directory with MultiViews enabled caused the server to disclose alternate file extensions (e.g. .php.bak, .php~) via content negotiation, revealing backup/source files.",
+    "remediation": "Disable MultiViews (Options -MultiViews) on directories containing sensitive source or backup files.",
+    "conditions": [
+      {
+        "payload": "/config",
+        "match": "response_header",
+        "pattern": "(?i)Vary:\\s*negotiate"
+      }
+    ]
+  },
+  {
+    "name": "Webserver - PHP-FPM Status Page Publicly Accessible",
+    "type": "active",
+    "severity": "medium",
+    "confidence": "certain",
+    "description": "The /status endpoint configured for PHP-FPM's pm.status_path is reachable without authentication, exposing pool worker states, request URIs, and script paths currently being processed.",
+    "remediation": "Restrict the FPM status and ping endpoints to localhost or an authenticated internal monitoring network only.",
+    "conditions": [
+      {
+        "payload": "/status",
+        "match": "response_body",
+        "pattern": "(?i)pool:\\s*\\w+\\s*\\nprocess manager:"
+      }
+    ]
+  },
+  {
+    "name": "Webserver - Apache Tomcat Manager Default Credentials Reachable",
+    "type": "active",
+    "severity": "high",
+    "confidence": "tentative",
+    "description": "The Tomcat /manager/html endpoint was reachable and accepted a common default credential pair, which permits deploying a WAR file for full remote code execution on the server.",
+    "remediation": "Remove or restrict the Manager/Host-Manager applications in production, change default credentials immediately, and bind manager access to a private management network.",
+    "conditions": [
+      {
+        "payload": "Authorization: Basic dG9tY2F0OnRvbWNhdA==",
+        "match": "status",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "name": "Webserver - Exposed CGI-BIN Shellshock-Style Header Injection (CVE-2014-6271 class)",
+    "type": "active",
+    "severity": "high",
+    "confidence": "certain",
+    "description": "A crafted environment-variable-style payload in a request header to a CGI script resulted in the injected command's output appearing in the response, confirming the Shellshock-class Bash environment variable injection vulnerability.",
+    "remediation": "Patch Bash to a non-vulnerable version immediately and avoid invoking Bash to process untrusted CGI environment variables; migrate legacy CGI scripts off Bash entirely.",
+    "conditions": [
+      {
+        "payload": "() { :; }; echo; echo lawcybug-shellshock-test",
+        "match": "response_body",
+        "pattern": "lawcybug-shellshock-test"
+      }
+    ]
+  },
+  {
+    "name": "Webserver - Load Balancer Health Check Endpoint Leaks Backend Topology",
+    "type": "passive",
+    "severity": "low",
+    "confidence": "firm",
+    "description": "A health-check endpoint (e.g. /health, /ping) returns detailed backend hostnames, internal IPs, or dependency status (DB/cache connectivity) rather than a minimal up/down signal.",
+    "remediation": "Return a minimal generic status from public health-check endpoints; expose detailed dependency diagnostics only on an internal-only management endpoint.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)\\\"(database|redis|cache)\\\"\\s*:\\s*\\{\\s*\\\"status\\\"\\s*:\\s*\\\"(up|connected)\\\"[\\s\\S]{0,100}\\\"host\\\"\\s*:\\s*\\\""
+      }
+    ]
+  },
+  {
+    "name": "Web3 - Flash Loan Callback Without Reentrancy Guard",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "tentative",
+    "description": "Contract source implements a flash-loan callback (e.g. onFlashLoan/executeOperation) that updates pool reserves/balances after invoking an external untrusted callback, without a reentrancy guard \u2014 enabling classic flash-loan-funded reentrancy/price-manipulation attacks.",
+    "remediation": "Apply a reentrancy guard to all flash-loan callback handlers and update internal accounting state before invoking the external callback, not after.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)function\\s+(executeOperation|onFlashLoan)\\s*\\([^)]*\\)[^{]*\\{(?:(?!nonReentrant)[\\s\\S]){0,300}\\.call\\("
+      }
+    ]
+  },
+  {
+    "name": "Web3 - Cross-Chain Bridge Single Validator Signature Acceptance",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "tentative",
+    "description": "Bridge contract source accepts a withdrawal/mint proof with only a single validator signature rather than a threshold multisig quorum, meaning compromise of one validator key allows arbitrary minting/withdrawal on the destination chain.",
+    "remediation": "Require a configurable M-of-N validator signature threshold for all cross-chain message verification, with key rotation and slashing for misbehaving validators.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)function\\s+(verifySignature|validateProof)\\s*\\([^)]*\\)[^{]*\\{(?:(?!threshold)[\\s\\S]){0,250}ecrecover\\("
+      }
+    ]
+  },
+  {
+    "name": "Web3 - Multisig Wallet With Threshold Equal to 1",
+    "type": "passive",
+    "severity": "medium",
+    "confidence": "tentative",
+    "description": "An on-chain multisig wallet configuration (e.g. Gnosis Safe-style) reports a required-signature threshold of 1 against multiple owners, providing no actual protection against a single compromised key.",
+    "remediation": "Configure the multisig threshold to require at least 2 (and ideally a majority) of distinct signer keys for any transaction execution.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)\\\"threshold\\\"\\s*:\\s*1\\b[\\s\\S]{0,150}\\\"owners\\\"\\s*:\\s*\\[[^\\]]{20,}"
+      }
+    ]
+  },
+  {
+    "name": "Web3 - Uniswap V2-Style Pair Spot Price Used Without TWAP",
+    "type": "passive",
+    "severity": "medium",
+    "confidence": "tentative",
+    "description": "Contract source reads getReserves() from a single AMM pair directly as a price input for a financial calculation (e.g. collateral valuation) without a time-weighted average, making it manipulable within a single block via a large swap or flash loan.",
+    "remediation": "Use a TWAP oracle (e.g. Uniswap V3 TWAP or Chainlink) for any price input feeding into financial logic such as collateral valuation or liquidation triggers.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)\\(\\s*uint112\\s+reserve0\\s*,\\s*uint112\\s+reserve1\\s*[,)][\\s\\S]{0,150}=\\s*\\w+\\.getReserves\\(\\)"
+      }
+    ]
+  },
+  {
+    "name": "Web3 - Solana Program Missing Owner/Signer Check on Account",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "tentative",
+    "description": "Exposed Solana program source processes an instruction against an account without verifying account.owner matches the expected program ID or that the expected signer flag is set, a common Solana-specific vulnerability class allowing account substitution attacks.",
+    "remediation": "Explicitly verify account ownership (account.owner == program_id) and is_signer on every account passed into a privileged instruction handler.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)pub fn process_instruction[\\s\\S]{0,400}AccountInfo[\\s\\S]{0,400}(?!is_signer)(?!owner ==)"
+      }
+    ]
+  },
+  {
+    "name": "Web3 - ERC-721 safeTransferFrom Reentrancy via onERC721Received",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "tentative",
+    "description": "Contract source calls safeTransferFrom (which invokes the recipient contract's onERC721Received callback) before finalizing internal accounting/state changes related to the transfer, enabling reentrancy through a malicious NFT recipient contract.",
+    "remediation": "Apply checks-effects-interactions ordering and a reentrancy guard around any function performing safeTransferFrom with state changes dependent on the transfer's success.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)\\.safeTransferFrom\\([^)]*\\)[\\s\\S]{0,150}(balances?|owners?)\\[[^\\]]+\\]\\s*=\\s*"
+      }
+    ]
+  },
+  {
+    "name": "Web3 - Governance Token Flash-Loan Voting Power Manipulation",
+    "type": "passive",
+    "severity": "medium",
+    "confidence": "tentative",
+    "description": "Governance contract source computes voting power from the current token balance at proposal-execution time rather than a historical snapshot, allowing an attacker to flash-loan-borrow tokens, vote, and repay within one transaction to manipulate governance outcomes.",
+    "remediation": "Use snapshot-based voting power (e.g. ERC20Votes/Comp-style checkpoints at proposal creation block) rather than live balance lookups.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)function\\s+(getVotes|votingPower)\\s*\\([^)]*\\)[^{]*\\{[\\s\\S]{0,150}balanceOf\\("
+      }
+    ]
+  },
+  {
+    "name": "Cloud - AWS Cognito Identity Pool Allows Unauthenticated Role Assumption",
+    "type": "active",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "An unauthenticated GetId/GetCredentialsForIdentity call against the Cognito Identity Pool succeeded and returned temporary AWS credentials, confirming the pool grants unauthenticated access to an IAM role broader than intended.",
+    "remediation": "Restrict the Cognito unauthenticated role to the absolute minimum required permissions (ideally none), and require authenticated identity for any privileged action.",
+    "conditions": [
+      {
+        "payload": "{\"IdentityPoolId\":\"TARGET_POOL_ID\"}",
+        "match": "response_body",
+        "pattern": "\\\"IdentityId\\\"\\s*:\\s*\\\"[\\w-]+:[a-f0-9-]{36}\\\""
+      }
+    ]
+  },
+  {
+    "name": "Cloud - AWS API Gateway Stage Exposes Internal/Test Endpoints",
+    "type": "passive",
+    "severity": "low",
+    "confidence": "tentative",
+    "description": "A response or discovered route references an API Gateway stage name suggesting an internal/dev/test deployment (e.g. /dev/, /internal/, /staging/) reachable from the public execute-api domain.",
+    "remediation": "Restrict non-production API Gateway stages with resource policies/IAM auth, or remove them from public DNS/execute-api exposure entirely.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)execute-api\\.[\\w-]+\\.amazonaws\\.com/(dev|test|internal|staging)/"
+      }
+    ]
+  },
+  {
+    "name": "Cloud - AWS Secrets Manager ARN Disclosed in Error Message",
+    "type": "passive",
+    "severity": "medium",
+    "confidence": "firm",
+    "description": "An application error message includes a full AWS Secrets Manager secret ARN, which while not the secret value itself, confirms exact secret naming/location and aids targeted IAM privilege-escalation attempts against that specific resource.",
+    "remediation": "Catch and sanitize AWS SDK exceptions before returning any error to the client; never propagate raw SDK error messages containing ARNs to end users.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "arn:aws:secretsmanager:[\\w-]+:\\d{12}:secret:[\\w/+=.@-]+"
+      }
+    ]
+  },
+  {
+    "name": "Cloud - Firebase Realtime Database Open Read/Write Rules",
+    "type": "active",
+    "severity": "high",
+    "confidence": "certain",
+    "description": "An unauthenticated GET to the Firebase Realtime Database's .json endpoint returned full database content, confirming the security rules allow public read (and likely write) access to all data.",
+    "remediation": "Set Firebase Realtime Database rules to require authentication (\"auth != null\") at minimum, and scope rules per-path to the owning user's UID for anything user-specific.",
+    "conditions": [
+      {
+        "payload": "/.json",
+        "match": "status",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "name": "Cloud - Google Firestore Rules Allow Public Read/Write",
+    "type": "active",
+    "severity": "high",
+    "confidence": "certain",
+    "description": "A Firestore REST API request to list documents in a collection succeeded without authentication, confirming the security rules permit unauthenticated read access to the database.",
+    "remediation": "Set Firestore security rules to deny by default and explicitly scope read/write permissions per collection to authenticated, authorized users only.",
+    "conditions": [
+      {
+        "payload": "/documents/users",
+        "match": "response_body",
+        "pattern": "\\\"documents\\\"\\s*:\\s*\\["
+      }
+    ]
+  },
+  {
+    "name": "Cloud - HashiCorp Vault Sealed Status / Unauthenticated Health Leak",
+    "type": "passive",
+    "severity": "low",
+    "confidence": "firm",
+    "description": "The Vault /v1/sys/health endpoint is reachable without authentication and discloses seal status and version information, which an attacker can use to time an attack around unseal operations or target known version CVEs.",
+    "remediation": "Restrict access to Vault's sys/health and sys/seal-status endpoints to the internal management network; do not expose Vault's API publicly.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "\\\"sealed\\\"\\s*:\\s*(true|false)[\\s\\S]{0,100}\\\"version\\\"\\s*:\\s*\\\""
+      }
+    ]
+  },
+  {
+    "name": "Cloud - RabbitMQ Management Console Default Guest Credentials",
+    "type": "active",
+    "severity": "high",
+    "confidence": "tentative",
+    "description": "The RabbitMQ management API accepted the default guest/guest credential pair and returned queue/exchange data, confirming default credentials were never changed and the management interface may be reachable beyond localhost.",
+    "remediation": "Disable the default guest account (or restrict it to localhost only, which is the RabbitMQ default) and require strong unique credentials for the management interface.",
+    "conditions": [
+      {
+        "payload": "Authorization: Basic Z3Vlc3Q6Z3Vlc3Q=",
+        "match": "response_body",
+        "pattern": "\\\"rabbitmq_version\\\"\\s*:\\s*\\\""
+      }
+    ]
+  },
+  {
+    "name": "Cloud - MongoDB Exposed Without Authentication",
+    "type": "active",
+    "severity": "high",
+    "confidence": "certain",
+    "description": "A MongoDB wire-protocol isMaster/listDatabases command succeeded against the exposed port without credentials, confirming the instance has no authentication enabled and all data is readable/writable by anyone reaching the port.",
+    "remediation": "Enable MongoDB authentication (--auth) with role-based access control, bind to a private interface, and never expose port 27017 directly to the internet.",
+    "conditions": [
+      {
+        "payload": "listDatabases",
+        "match": "response_body",
+        "pattern": "\\\"databases\\\"\\s*:\\s*\\["
+      }
+    ]
+  },
+  {
+    "name": "Cloud - Cassandra/Zookeeper Exposed Without Authentication",
+    "type": "active",
+    "severity": "high",
+    "confidence": "certain",
+    "description": "An unauthenticated 'envi' or describe-cluster style command against the exposed coordination/database service returned cluster topology details, confirming no authentication is enforced on this data-plane port.",
+    "remediation": "Enable authentication (e.g. Cassandra's PasswordAuthenticator, Zookeeper SASL) and restrict these ports to the internal cluster network via firewall/security group rules.",
+    "conditions": [
+      {
+        "payload": "envi",
+        "match": "response_body",
+        "pattern": "(?i)(Environment:|zk_version)"
+      }
+    ]
+  },
+  {
+    "name": "Cloud - Self-Hosted GitLab/Gitea Public Project Snooping Reveals Private Repos via API",
+    "type": "active",
+    "severity": "medium",
+    "confidence": "tentative",
+    "description": "The instance's projects API returned repositories marked visibility:private when queried without authentication, indicating an access-control misconfiguration in the API layer separate from the web UI's enforcement.",
+    "remediation": "Ensure API-layer authorization checks mirror the web UI's visibility rules exactly; add integration tests asserting unauthenticated API calls never return private-visibility resources.",
+    "conditions": [
+      {
+        "payload": "/api/v4/projects",
+        "match": "response_body",
+        "pattern": "\\\"visibility\\\"\\s*:\\s*\\\"private\\\""
+      }
+    ]
+  },
+  {
+    "name": "Cloud - Container Registry (Docker) Catalog Publicly Listable",
+    "type": "active",
+    "severity": "medium",
+    "confidence": "firm",
+    "description": "The /v2/_catalog endpoint of a private Docker registry returned a full list of image repositories without authentication, exposing internal application/service names and enabling targeted image pulls if push/pull auth is also weak.",
+    "remediation": "Require authentication for the /v2/_catalog and all registry API endpoints; never run an anonymous-access registry on a public IP.",
+    "conditions": [
+      {
+        "payload": "/v2/_catalog",
+        "match": "response_body",
+        "pattern": "\\\"repositories\\\"\\s*:\\s*\\["
+      }
+    ]
+  },
+  {
+    "name": "phpMyAdmin Publicly Accessible With Default Path",
+    "type": "passive",
+    "severity": "medium",
+    "confidence": "firm",
+    "description": "A phpMyAdmin login page is reachable at a default/common path, expanding the attack surface for credential stuffing and known phpMyAdmin CVEs targeting the authenticated session.",
+    "remediation": "Restrict phpMyAdmin access to an internal network/VPN or behind an additional authentication layer (e.g. HTTP Basic Auth at the web server level), and keep it patched to the latest version.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)<title>phpMyAdmin</title>|Welcome to phpMyAdmin"
+      }
+    ]
+  },
+  {
+    "name": "Adminer Database Tool Publicly Accessible",
+    "type": "passive",
+    "severity": "medium",
+    "confidence": "firm",
+    "description": "An Adminer database management tool instance is reachable, allowing direct database login attempts and, in older versions, known SSRF/RCE vulnerabilities via the 'remote login' feature.",
+    "remediation": "Remove Adminer from production environments entirely, or restrict access via IP allow-list and strong authentication at the web server layer.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)<title>Adminer[^<]*</title>"
+      }
+    ]
+  },
+  {
+    "name": "WooCommerce - REST API Key Exposed in Response",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "A WooCommerce REST API consumer key/secret pair (ck_/cs_ prefixed) was found in a response body, granting programmatic access to store orders, customers, and payment-related data depending on key permissions.",
+    "remediation": "Revoke and regenerate the exposed API key pair in WooCommerce settings; never embed REST API keys in client-side code or publicly cached responses.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "\\bck_[a-f0-9]{40}\\b[\\s\\S]{0,200}\\bcs_[a-f0-9]{40}\\b"
+      }
+    ]
+  },
+  {
+    "name": "PrestaShop - Database Configuration Exposed via config/settings.inc.php Backup",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "A backup variant of PrestaShop's settings.inc.php (e.g. settings.inc.php.bak) is directly downloadable, exposing the database hostname, username, and password used by the storefront.",
+    "remediation": "Ensure backup/editor temp files (.bak, .swp, ~) are never left inside the web-served document root; add a server-level deny rule for these extensions.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)define\\('_DB_PASSWD_'.*?define\\('_DB_NAME_'"
+      }
+    ]
+  },
+  {
+    "name": "vBulletin - Template Conditional Code Injection (CVE-2019-16759 class)",
+    "type": "active",
+    "severity": "high",
+    "confidence": "certain",
+    "description": "A crafted 'widgetConfig[code]' parameter caused server-side PHP code execution evidence in the response, consistent with the vBulletin pre-auth template conditional injection RCE vulnerability.",
+    "remediation": "Apply the official vBulletin security patch for this vulnerability class immediately; disable the affected ajax/api.php routine if a patch cannot be applied promptly.",
+    "conditions": [
+      {
+        "payload": "routestring=ajax/render/widget_php&widgetConfig[code]=echo+lawcybug_vb_rce_test();&widgetConfig[file]=test",
+        "match": "response_body",
+        "pattern": "lawcybug_vb_rce_test"
+      }
+    ]
+  },
+  {
+    "name": "Generic CMS Plugin - SQL Injection via Unauthenticated AJAX Action Parameter",
+    "type": "active",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "An unauthenticated AJAX-style action parameter common to many CMS plugin architectures (e.g. WordPress admin-ajax.php ?action=) accepted a single-quote payload and triggered a database error, indicating a plugin endpoint passes input directly into a SQL query.",
+    "remediation": "Audit all plugin AJAX action handlers for parameterized query usage; require capability checks (and nonces) even for read-only AJAX actions where feasible.",
+    "conditions": [
+      {
+        "payload": "action=lawcybug_test&id=1'",
+        "match": "response_body",
+        "pattern": "(?i)(you have an error in your sql syntax|warning: mysqli?_)"
+      }
+    ]
+  },
+  {
+    "name": "Webserver - Nginx merge_slashes Off Path Confusion Bypass",
+    "type": "active",
+    "severity": "medium",
+    "confidence": "tentative",
+    "description": "Using doubled slashes in the request path (e.g. //admin//) bypassed a location-block access restriction that matched only the single-slash form, returning content that should have required authentication.",
+    "remediation": "Set merge_slashes on (the nginx default) and avoid relying solely on exact-string location matching for access control; pair with application-level authorization checks.",
+    "conditions": [
+      {
+        "payload": "//admin//",
+        "match": "status",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "name": "Webserver - .well-known Directory Exposes Internal ACME/Security Metadata",
+    "type": "passive",
+    "severity": "low",
+    "confidence": "tentative",
+    "description": "The /.well-known/ path exposes files beyond the expected acme-challenge/security.txt (e.g. internal tool configs), suggesting the directory is being used to host content that should not be publicly indexed.",
+    "remediation": "Limit /.well-known/ to its standard, narrowly-scoped purposes (ACME challenges, security.txt) and avoid placing other internal artifacts there.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)<title>Index of /\\.well-known"
+      }
+    ]
+  },
+  {
+    "name": "Webserver - Cloudflare/WAF Bypass via Direct Origin IP in Host Header",
+    "type": "active",
+    "severity": "high",
+    "confidence": "tentative",
+    "description": "Connecting directly to the discovered origin IP while sending the legitimate Host header returned the full site content, confirming the WAF/CDN in front of the application can be bypassed entirely by attacking the origin directly.",
+    "remediation": "Configure the origin firewall to accept connections only from the CDN provider's published IP ranges, and use a shared secret header validated at the origin for defense in depth.",
+    "conditions": [
+      {
+        "payload": "Host: target-site.example.com",
+        "match": "status",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "name": "Webserver - Varnish Cache Poisoning via Unkeyed X-Forwarded-Proto",
+    "type": "active",
+    "severity": "medium",
+    "confidence": "tentative",
+    "description": "Manipulating the X-Forwarded-Proto header caused protocol-relative content (e.g. generated absolute URLs) to change in a cacheable response without the header being part of the Vary/cache key, enabling cache poisoning across users.",
+    "remediation": "Include any header that influences response content in the cache key (Vary), or strip/normalize X-Forwarded-Proto at a trusted edge before it reaches the cache layer.",
+    "conditions": [
+      {
+        "payload": "X-Forwarded-Proto: lawcybug-poison-test",
+        "match": "response_body",
+        "pattern": "lawcybug-poison-test://"
+      }
+    ]
+  },
+  {
+    "name": "Webserver - HAProxy Stats Page Publicly Accessible",
+    "type": "active",
+    "severity": "medium",
+    "confidence": "firm",
+    "description": "The HAProxy /haproxy?stats (or configured stats URI) page is reachable without authentication, exposing backend server names, internal IPs, and live connection/session statistics.",
+    "remediation": "Require HTTP Basic Auth (or restrict by source IP) on the HAProxy stats page configuration, and never bind it to a publicly routable listener.",
+    "conditions": [
+      {
+        "payload": "/haproxy?stats",
+        "match": "response_body",
+        "pattern": "(?i)Statistics Report for HAProxy"
+      }
+    ]
+  },
+  {
+    "name": "Webserver - Apache Server-Side Includes (SSI) Injection",
+    "type": "active",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "An SSI directive payload (e.g. an exec cmd directive) was processed and its command output appeared in the response, confirming Server-Side Includes injection leading to remote code execution.",
+    "remediation": "Disable the Includes/IncludesNOEXEC option for any directory accepting user-controlled content, and never allow user input to reach files parsed with the SSI handler.",
+    "conditions": [
+      {
+        "payload": "<!--#exec cmd=\"id\"-->",
+        "match": "response_body",
+        "pattern": "uid=\\d+\\([a-zA-Z0-9_-]+\\)\\s+gid=\\d+"
+      }
+    ]
+  },
+  {
+    "name": "Webserver - Apache .DS_Store File Discloses Directory Structure",
+    "type": "passive",
+    "severity": "low",
+    "confidence": "firm",
+    "description": "A macOS .DS_Store metadata file is publicly downloadable, allowing extraction of the full list of filenames in that directory (including ones not otherwise linked or indexed).",
+    "remediation": "Add a server-level deny rule for .DS_Store (and other OS-generated metadata files) across the entire web root.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "^\\x00\\x00\\x00\\x01Bud1"
+      }
+    ]
+  }
+]

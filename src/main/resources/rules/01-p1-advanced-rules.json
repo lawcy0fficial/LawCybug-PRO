@@ -1,0 +1,341 @@
+[
+  {
+    "name": "OS Command Injection - Error Signature",
+    "type": "active",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "Injecting a shell metacharacter payload caused command-execution error output (sh/bash syntax errors or echoed command output) to appear in the response, indicating possible OS command injection.",
+    "remediation": "Never pass user input to a shell. Use parameterized APIs/library calls instead of shell invocation, and apply strict input allow-listing.",
+    "conditions": [
+      {
+        "payload": ";id;",
+        "match": "response_body",
+        "pattern": "(?i)(uid=\\d+\\(.*?\\)|gid=\\d+\\(.*?\\)|sh: .*?: command not found|/bin/sh: .*?not found)"
+      }
+    ]
+  },
+  {
+    "name": "OS Command Injection - Time-Based Blind",
+    "type": "active",
+    "severity": "high",
+    "confidence": "tentative",
+    "description": "A payload containing a sleep command was injected. If the response is delayed proportionally on retest with varying sleep durations, this strongly suggests blind OS command injection. (Note: this engine cannot measure response time directly via condition matching — pair this rule with manual confirmation or extend ActiveDetector for true timing checks.)",
+    "remediation": "Avoid shell execution with user-controlled input; use sandboxed execution with strict argument lists.",
+    "conditions": [
+      {
+        "payload": "|| sleep 9 ||",
+        "match": "status",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "name": "RCE via Template Injection (SSTI) Confirmation",
+    "type": "active",
+    "severity": "high",
+    "confidence": "certain",
+    "description": "Submitting a math-expression template payload (e.g. ${7*7} / {{7*7}}) returned the evaluated result '49' in the response, confirming server-side template injection which often leads to remote code execution.",
+    "remediation": "Never render user input as a template. Use logic-less templating, sandboxed template engines, or output-only contexts for user-controlled data.",
+    "conditions": [
+      {
+        "payload": "${7*7}{{7*7}}<%= 7*7 %>#{7*7}",
+        "match": "response_body",
+        "pattern": "(?<![0-9])49(?![0-9])"
+      }
+    ]
+  },
+  {
+    "name": "Java Deserialization Stack Trace Disclosure",
+    "type": "active",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "A crafted payload triggered a deserialization-related exception (ObjectInputStream / ysoserial-style class names) in the response, suggesting unsafe deserialization that may be exploitable for RCE.",
+    "remediation": "Avoid native deserialization of untrusted data. Use safe data formats (JSON/Protobuf with schema validation) and allow-list deserializable classes.",
+    "conditions": [
+      {
+        "payload": "rO0AB",
+        "match": "response_body",
+        "pattern": "(?i)(java\\.io\\.ObjectInputStream|InvalidClassException|ClassNotFoundException|StreamCorruptedException|CommonsCollections|org\\.apache\\.commons\\.collections)"
+      }
+    ]
+  },
+  {
+    "name": "SQL Injection - Error Based",
+    "type": "active",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "A single-quote payload triggered a database error message in the response, indicating the input is concatenated directly into a SQL query without proper parameterization.",
+    "remediation": "Use parameterized queries / prepared statements exclusively. Never build SQL via string concatenation with user input.",
+    "conditions": [
+      {
+        "payload": "'",
+        "match": "response_body",
+        "pattern": "(?i)(sql syntax|mysql_fetch|ORA-\\d{5}|PostgreSQL.*?ERROR|SQLite\\/JDBCDriver|System\\.Data\\.SqlClient|Unclosed quotation mark|pg_query\\(\\)|SQLSTATE\\[)"
+      }
+    ]
+  },
+  {
+    "name": "NoSQL Injection - MongoDB Operator Bypass",
+    "type": "active",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "Injecting a MongoDB query-operator payload (e.g. $ne/$gt as a JSON value) altered application behavior, returning a result set instead of an authentication/lookup failure — indicating NoSQL operator injection.",
+    "remediation": "Strictly type and validate input before passing to the query layer. Reject objects/operators where scalar values are expected; use a schema validation layer (e.g. Mongoose strict schemas) and parameterize via the driver's safe query builders.",
+    "conditions": [
+      {
+        "payload": "{\"$ne\":null}",
+        "match": "response_body",
+        "pattern": "(?i)(\"success\"\\s*:\\s*true|\"token\"|\"_id\"\\s*:\\s*\"[0-9a-f]{24}\"|\"authenticated\"\\s*:\\s*true)"
+      }
+    ]
+  },
+  {
+    "name": "NoSQL Injection - JavaScript $where Execution",
+    "type": "active",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "A $where clause payload using JavaScript sleep semantics returned a server-side script error or unexpected data, indicating server-side JavaScript execution inside MongoDB queries.",
+    "remediation": "Disable $where and server-side JS execution in MongoDB. Use the aggregation framework with fixed operators instead of free-form query objects from user input.",
+    "conditions": [
+      {
+        "payload": "{\"$where\":\"sleep(1) || this.x\"}",
+        "match": "response_body",
+        "pattern": "(?i)(JavaScript execution failed|\\$where|MongoServerError|BadValue)"
+      }
+    ]
+  },
+  {
+    "name": "LDAP Injection",
+    "type": "active",
+    "severity": "high",
+    "confidence": "tentative",
+    "description": "An LDAP filter metacharacter wildcard bypassed expected filtering logic, returning broader results than expected — suggesting unsanitized input is reaching an LDAP search filter.",
+    "remediation": "Escape LDAP special characters (*, (, ), \\, NUL) per RFC 4515 before building filters, or use parameterized LDAP filter APIs.",
+    "conditions": [
+      {
+        "payload": "*)(uid=*))(|(uid=*",
+        "match": "response_body",
+        "pattern": "(?i)(\"results\"\\s*:\\s*\\[\\{|<entry|uid=)"
+      }
+    ]
+  },
+  {
+    "name": "XXE - Out-of-the-box Entity Reflection",
+    "type": "active",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "A DOCTYPE entity payload defining a local file reference resulted in file contents (e.g. /etc/passwd) being reflected in the response, indicating XML External Entity injection.",
+    "remediation": "Disable DTD processing and external entity resolution in the XML parser (e.g. setFeature 'disallow-doctype-decl' true). Use a hardened XML parser configuration by default.",
+    "conditions": [
+      {
+        "payload": "<?xml version=\"1.0\"?><!DOCTYPE r [<!ENTITY x SYSTEM \"file:///etc/passwd\">]><r>&x;</r>",
+        "match": "response_body",
+        "pattern": "root:.*?:0:0:"
+      }
+    ]
+  },
+  {
+    "name": "JWT - alg:none Acceptance",
+    "type": "active",
+    "severity": "high",
+    "confidence": "certain",
+    "description": "A JWT with its algorithm header set to 'none' and signature stripped was accepted by the server (HTTP 200 with authenticated content), meaning signature verification is not enforced.",
+    "remediation": "Explicitly allow-list accepted JWT algorithms server-side and reject 'none'. Never trust the alg header from the token itself to choose the verification method.",
+    "conditions": [
+      {
+        "payload": "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJhZG1pbiIsInJvbGUiOiJhZG1pbiJ9.",
+        "match": "status",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "name": "JWT - Weak/Guessable HMAC Secret (jwt-cracked marker)",
+    "type": "active",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "A token re-signed with a common weak secret (e.g. 'secret', '123456') was accepted, indicating the HS256 signing key is guessable/brute-forceable. (Generate this payload offline per-endpoint with a tool like hashcat/jwt_tool against your target's actual claims before loading.)",
+    "remediation": "Use a high-entropy signing secret (256-bit, randomly generated) or switch to asymmetric signing (RS256/ES256). Rotate any previously deployed weak secrets immediately.",
+    "conditions": [
+      {
+        "payload": "REPLACE_WITH_RESIGNED_TOKEN_USING_WEAK_SECRET",
+        "match": "status",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "name": "OAuth - Missing 'state' Parameter (CSRF in OAuth Flow)",
+    "type": "passive",
+    "severity": "medium",
+    "confidence": "firm",
+    "description": "An OAuth/OIDC authorization request was observed without a 'state' parameter, making the flow susceptible to CSRF-based account linking/takeover attacks.",
+    "remediation": "Always generate a unique, unguessable 'state' value per authorization request, store it server-side tied to the user session, and validate it on callback before exchanging the code.",
+    "conditions": [
+      {
+        "target": "request_header",
+        "pattern": "(?i)^:path: .*?/(authorize|oauth|auth)\\?(?!.*state=).*client_id="
+      }
+    ]
+  },
+  {
+    "name": "OAuth - Implicit Grant Flow in Use",
+    "type": "passive",
+    "severity": "low",
+    "confidence": "firm",
+    "description": "The authorization request specifies response_type=token (implicit grant), which exposes access tokens directly in the URL fragment/browser history and is deprecated in OAuth 2.1.",
+    "remediation": "Migrate to the Authorization Code flow with PKCE. Avoid implicit grant entirely for new integrations.",
+    "conditions": [
+      {
+        "target": "request_header",
+        "pattern": "(?i)response_type=token\\b"
+      }
+    ]
+  },
+  {
+    "name": "OAuth - Open Redirect via redirect_uri",
+    "type": "active",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "Supplying an attacker-controlled redirect_uri was accepted and the server issued a redirect to it, meaning redirect_uri is not validated against a registered allow-list — exploitable for authorization code/token theft.",
+    "remediation": "Validate redirect_uri server-side against an exact-match allow-list of pre-registered URIs (no wildcard subdomain matching, no path-prefix matching).",
+    "conditions": [
+      {
+        "payload": "redirect_uri=https://attacker-controlled.example.com",
+        "match": "response_body",
+        "pattern": "(?i)attacker-controlled\\.example\\.com"
+      }
+    ]
+  },
+  {
+    "name": "Authorization Header Stripping on Internal Forward",
+    "type": "passive",
+    "severity": "medium",
+    "confidence": "tentative",
+    "description": "Response includes an X-Forwarded-* or internal gateway header alongside sensitive data with no corresponding Authorization enforcement evidence, hinting that an internal proxy/gateway forward may bypass auth checks performed only at the edge.",
+    "remediation": "Enforce authorization checks at every service layer (defense in depth), not only at the edge gateway. Re-validate identity/claims at each microservice boundary.",
+    "conditions": [
+      {
+        "target": "response_header",
+        "pattern": "(?i)^X-(Internal|Forwarded-For|Gateway)-"
+      }
+    ]
+  },
+  {
+    "name": "Insecure CORS - Reflected Origin with Credentials",
+    "type": "active",
+    "severity": "high",
+    "confidence": "certain",
+    "description": "The server reflected an arbitrary Origin value back in Access-Control-Allow-Origin combined with Access-Control-Allow-Credentials: true, allowing any website to read authenticated responses cross-origin — a direct path to account takeover via CSRF-style data theft.",
+    "remediation": "Never reflect Origin dynamically when credentials are allowed. Use a strict server-side allow-list of trusted origins.",
+    "conditions": [
+      {
+        "payload": "Origin: https://evil-cors-test.example.com",
+        "match": "response_body",
+        "pattern": "(?i)Access-Control-Allow-Origin:\\s*https://evil-cors-test\\.example\\.com[\\s\\S]{0,200}Access-Control-Allow-Credentials:\\s*true"
+      }
+    ]
+  },
+  {
+    "name": "Password Reset Token in Response/Referer Leak Path",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "tentative",
+    "description": "A password reset or account-verification token appears directly inside a response body or a link with no apparent expiry/binding indicator, raising the risk of token leakage via Referer headers, logs, or link sharing leading to account takeover.",
+    "remediation": "Make reset tokens single-use, short-lived (<=15 min), bound to the requesting account, and invalidate them immediately after use. Avoid putting tokens in GET URLs; prefer POST-based confirmation.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)(reset_token|verification_token|password_reset_token)\"?\\s*[:=]\\s*\"?[A-Za-z0-9_\\-\\.]{20,}"
+      }
+    ]
+  },
+  {
+    "name": "Sequential/Predictable Account Identifier Disclosure",
+    "type": "passive",
+    "severity": "medium",
+    "confidence": "tentative",
+    "description": "The response exposes a small sequential numeric ID for the current user/object (e.g. \"id\":1042). Small, sequential, enumerable identifiers are a strong precondition for IDOR — confirm exploitability manually by requesting adjacent IDs under a different authenticated identity.",
+    "remediation": "Use non-sequential, non-guessable identifiers (UUIDv4) for any object referenced in client-facing APIs, and enforce object-level authorization checks server-side regardless of ID predictability.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "\"(user_id|account_id|order_id|invoice_id)\"\\s*:\\s*\"?[0-9]{1,6}\"?"
+      }
+    ]
+  },
+  {
+    "name": "Mass Assignment Indicator - Privileged Field Echoed Back",
+    "type": "active",
+    "severity": "high",
+    "confidence": "tentative",
+    "description": "Sending an extra, unsolicited privileged field (e.g. role/isAdmin/is_admin) in a write request resulted in that exact field being echoed back as accepted in the response body, suggesting the backend binds request JSON directly to an internal model without an explicit allow-list. Confirm by checking the field's value via a subsequent authenticated read.",
+    "remediation": "Use explicit DTOs/allow-lists for bindable fields on every write endpoint; never bind raw request bodies directly onto persistence models. Reject unknown fields (e.g. Jackson FAIL_ON_UNKNOWN_PROPERTIES or strict schema validation).",
+    "conditions": [
+      {
+        "payload": "\"isAdmin\":true,\"role\":\"admin\"",
+        "match": "response_body",
+        "pattern": "(?i)\"(isAdmin\"\\s*:\\s*true|role\"\\s*:\\s*\"admin\")"
+      }
+    ]
+  },
+  {
+    "name": "GraphQL Mutation - Unauthorized Field Acceptance",
+    "type": "active",
+    "severity": "high",
+    "confidence": "tentative",
+    "description": "A GraphQL mutation including a privilege-related input field (e.g. role: ADMIN) on a self-service endpoint was accepted without error, indicating possible mass-assignment style privilege escalation through the GraphQL schema.",
+    "remediation": "Restrict mutable input fields per resolver based on the caller's role; validate at the resolver layer, not just the schema layer.",
+    "conditions": [
+      {
+        "payload": "{\"query\":\"mutation{updateProfile(input:{role:ADMIN}){id role}}\"}",
+        "match": "response_body",
+        "pattern": "(?i)\"role\"\\s*:\\s*\"ADMIN\""
+      }
+    ]
+  },
+  {
+    "name": "Business Logic - Negative Quantity/Price Acceptance",
+    "type": "active",
+    "severity": "high",
+    "confidence": "tentative",
+    "description": "Submitting a negative value for a quantity/price/amount field was accepted (HTTP 200) rather than rejected, which can be abused to manipulate totals, generate negative invoices, or receive store credit — a classic business-logic flaw.",
+    "remediation": "Validate numeric business fields server-side with explicit range checks (e.g. quantity > 0, price >= minimum), independent of any client-side validation.",
+    "conditions": [
+      {
+        "payload": "{\"quantity\":-1,\"price\":-100}",
+        "match": "status",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "name": "Business Logic - Coupon/Discount Stacking Acceptance",
+    "type": "active",
+    "severity": "medium",
+    "confidence": "tentative",
+    "description": "Applying the same coupon code multiple times in one request, or stacking mutually-exclusive discount codes, was accepted without an error, suggesting missing one-time-use or mutual-exclusivity enforcement.",
+    "remediation": "Enforce coupon redemption limits and mutual-exclusivity rules atomically server-side (e.g. via a unique-redemption constraint at the database level), not only at the UI layer.",
+    "conditions": [
+      {
+        "payload": "{\"coupons\":[\"SAVE10\",\"SAVE10\",\"SAVE10\"]}",
+        "match": "status",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "name": "Verbose Stack Trace Disclosure (Pre-RCE Recon Signal)",
+    "type": "passive",
+    "severity": "low",
+    "confidence": "firm",
+    "description": "A full stack trace including internal class/package names and file paths was returned to the client, aiding attackers in fingerprinting frameworks/libraries for targeted RCE exploit chains (e.g. known deserialization CVEs).",
+    "remediation": "Disable stack traces in production responses; log them server-side only and return generic error messages to clients.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)(at\\s+[\\w\\.]+\\([\\w\\.]+\\.java:\\d+\\)|Traceback \\(most recent call last\\)|System\\.Exception:|Microsoft\\.AspNetCore\\.Diagnostics)"
+      }
+    ]
+  }
+]
