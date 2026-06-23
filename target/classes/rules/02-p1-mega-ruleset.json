@@ -1,0 +1,2001 @@
+[
+  {
+    "name": "Secret Exposure - AWS Access Key ID",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "The response body contains what appears to be a AWS Access Key ID, a credential that should never be exposed to clients.",
+    "remediation": "Rotate the key immediately via IAM, scope future keys with least privilege, and never embed credentials in client-served responses.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "\\bAKIA[0-9A-Z]{16}\\b"
+      }
+    ]
+  },
+  {
+    "name": "Secret Exposure - AWS Secret Access Key",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "The response body contains what appears to be a AWS Secret Access Key, a credential that should never be exposed to clients.",
+    "remediation": "Rotate the secret immediately and move credentials to a secrets manager (e.g. AWS Secrets Manager/Vault).",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)aws_secret_access_key\\s*[:=]\\s*['\\\"]?[A-Za-z0-9/+=]{40}['\\\"]?"
+      }
+    ]
+  },
+  {
+    "name": "Secret Exposure - GCP API Key",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "The response body contains what appears to be a GCP API Key, a credential that should never be exposed to clients.",
+    "remediation": "Restrict and rotate the key in GCP console; apply API/application restrictions.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "\\bAIza[0-9A-Za-z\\-_]{35}\\b"
+      }
+    ]
+  },
+  {
+    "name": "Secret Exposure - GCP Service Account JSON",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "The response body contains what appears to be a GCP Service Account JSON, a credential that should never be exposed to clients.",
+    "remediation": "Revoke the service account key immediately and never serve service-account JSON from an application response.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "\\\"type\\\"\\s*:\\s*\\\"service_account\\\"[\\s\\S]{0,300}\\\"private_key\\\""
+      }
+    ]
+  },
+  {
+    "name": "Secret Exposure - Azure Storage Account Key",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "The response body contains what appears to be a Azure Storage Account Key, a credential that should never be exposed to clients.",
+    "remediation": "Regenerate the storage account key and store it in Azure Key Vault.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)AccountKey=[A-Za-z0-9+/=]{60,}"
+      }
+    ]
+  },
+  {
+    "name": "Secret Exposure - Slack Bot/User Token",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "The response body contains what appears to be a Slack Bot/User Token, a credential that should never be exposed to clients.",
+    "remediation": "Revoke the token in Slack app settings and rotate; audit OAuth scopes granted.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "\\bxox[baprs]-[0-9A-Za-z\\-]{10,72}\\b"
+      }
+    ]
+  },
+  {
+    "name": "Secret Exposure - Slack Webhook URL",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "The response body contains what appears to be a Slack Webhook URL, a credential that should never be exposed to clients.",
+    "remediation": "Regenerate the webhook URL; treat it as a secret, not a public configuration value.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "https://hooks\\.slack\\.com/services/T[0-9A-Z]{8,}/B[0-9A-Z]{8,}/[0-9A-Za-z]{20,}"
+      }
+    ]
+  },
+  {
+    "name": "Secret Exposure - Stripe Secret/Restricted Key",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "The response body contains what appears to be a Stripe Secret/Restricted Key, a credential that should never be exposed to clients.",
+    "remediation": "Roll the key immediately in the Stripe dashboard; restricted/secret keys must never reach the client.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "\\b(sk|rk)_(live|test)_[0-9A-Za-z]{16,}\\b"
+      }
+    ]
+  },
+  {
+    "name": "Secret Exposure - Stripe Publishable Key Exposure (context check)",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "The response body contains what appears to be a Stripe Publishable Key Exposure (context check), a credential that should never be exposed to clients.",
+    "remediation": "Publishable keys are normally safe to expose alone, but a co-located secret key indicates a leaked server config; rotate the secret key.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "\\bpk_live_[0-9A-Za-z]{16,}\\b.{0,200}\\b(sk|rk)_live_"
+      }
+    ]
+  },
+  {
+    "name": "Secret Exposure - Twilio API Key/SID + Auth Token",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "The response body contains what appears to be a Twilio API Key/SID + Auth Token, a credential that should never be exposed to clients.",
+    "remediation": "Rotate the Twilio Auth Token in console; never log or echo it back to clients.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "\\bAC[a-f0-9]{32}\\b[\\s\\S]{0,200}\\b[a-f0-9]{32}\\b"
+      }
+    ]
+  },
+  {
+    "name": "Secret Exposure - SendGrid API Key",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "The response body contains what appears to be a SendGrid API Key, a credential that should never be exposed to clients.",
+    "remediation": "Revoke and regenerate the key in SendGrid settings.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "\\bSG\\.[0-9A-Za-z\\-_]{22}\\.[0-9A-Za-z\\-_]{43}\\b"
+      }
+    ]
+  },
+  {
+    "name": "Secret Exposure - Mailgun API Key",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "The response body contains what appears to be a Mailgun API Key, a credential that should never be exposed to clients.",
+    "remediation": "Regenerate the Mailgun API key from the account dashboard.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "\\bkey-[0-9a-f]{32}\\b"
+      }
+    ]
+  },
+  {
+    "name": "Secret Exposure - GitHub Personal Access Token",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "The response body contains what appears to be a GitHub Personal Access Token, a credential that should never be exposed to clients.",
+    "remediation": "Revoke the token immediately in GitHub settings and audit recent API activity for abuse.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "\\bgh[pousr]_[0-9A-Za-z]{36,255}\\b"
+      }
+    ]
+  },
+  {
+    "name": "Secret Exposure - GitLab Personal Access Token",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "The response body contains what appears to be a GitLab Personal Access Token, a credential that should never be exposed to clients.",
+    "remediation": "Revoke the token in GitLab user settings and rotate.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "\\bglpat-[0-9A-Za-z\\-_]{20}\\b"
+      }
+    ]
+  },
+  {
+    "name": "Secret Exposure - npm Access Token",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "The response body contains what appears to be a npm Access Token, a credential that should never be exposed to clients.",
+    "remediation": "Revoke the token via npm account settings; audit package publish history.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "\\bnpm_[0-9A-Za-z]{36}\\b"
+      }
+    ]
+  },
+  {
+    "name": "Secret Exposure - PyPI Upload Token",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "The response body contains what appears to be a PyPI Upload Token, a credential that should never be exposed to clients.",
+    "remediation": "Revoke the token on PyPI account settings and rotate.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "\\bpypi-AgEIcHlwaS5vcmc[0-9A-Za-z\\-_]{50,}\\b"
+      }
+    ]
+  },
+  {
+    "name": "Secret Exposure - Heroku API Key",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "The response body contains what appears to be a Heroku API Key, a credential that should never be exposed to clients.",
+    "remediation": "Rotate the Heroku API key and store via config vars/secrets manager only.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)heroku[_-]?api[_-]?key['\\\"]?\\s*[:=]\\s*['\\\"]?[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+      }
+    ]
+  },
+  {
+    "name": "Secret Exposure - Firebase Cloud Messaging Server Key",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "The response body contains what appears to be a Firebase Cloud Messaging Server Key, a credential that should never be exposed to clients.",
+    "remediation": "Regenerate the FCM server key in Firebase console; restrict by IP/referrer if possible.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "\\bAAAA[0-9A-Za-z_-]{7}:[0-9A-Za-z_-]{140}\\b"
+      }
+    ]
+  },
+  {
+    "name": "Secret Exposure - Square Access Token",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "The response body contains what appears to be a Square Access Token, a credential that should never be exposed to clients.",
+    "remediation": "Revoke and reissue the token in the Square Developer Dashboard.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "\\bsq0(atp|csp)-[0-9A-Za-z\\-_]{22,43}\\b"
+      }
+    ]
+  },
+  {
+    "name": "Secret Exposure - PayPal/Braintree Access Token",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "The response body contains what appears to be a PayPal/Braintree Access Token, a credential that should never be exposed to clients.",
+    "remediation": "Revoke the production access token immediately via the Braintree control panel.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "\\baccess_token\\$production\\$[0-9a-z]{16}\\$[0-9a-f]{32}\\b"
+      }
+    ]
+  },
+  {
+    "name": "Secret Exposure - Shopify Access/API Token",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "The response body contains what appears to be a Shopify Access/API Token, a credential that should never be exposed to clients.",
+    "remediation": "Revoke the app's access token from the Shopify admin and reinstall with least-privilege scopes.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "\\bshpat_[0-9a-fA-F]{32}\\b"
+      }
+    ]
+  },
+  {
+    "name": "Secret Exposure - Facebook/Meta Access Token",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "The response body contains what appears to be a Facebook/Meta Access Token, a credential that should never be exposed to clients.",
+    "remediation": "Revoke the token via Meta Developer dashboard and rotate app secret.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "\\bEAA[0-9A-Za-z]{90,}\\b"
+      }
+    ]
+  },
+  {
+    "name": "Secret Exposure - Discord Bot Token",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "The response body contains what appears to be a Discord Bot Token, a credential that should never be exposed to clients.",
+    "remediation": "Regenerate the bot token in the Discord Developer Portal immediately.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "\\b[MN][A-Za-z\\d]{23}\\.[A-Za-z\\d_-]{6}\\.[A-Za-z\\d_-]{27}\\b"
+      }
+    ]
+  },
+  {
+    "name": "Secret Exposure - Telegram Bot Token",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "The response body contains what appears to be a Telegram Bot Token, a credential that should never be exposed to clients.",
+    "remediation": "Revoke the token via @BotFather and issue a new one.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "\\b\\d{8,10}:[A-Za-z0-9_-]{35}\\b"
+      }
+    ]
+  },
+  {
+    "name": "Secret Exposure - Generic Private Key Block (PEM)",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "The response body contains what appears to be a Generic Private Key Block (PEM), a credential that should never be exposed to clients.",
+    "remediation": "Treat the key as fully compromised: revoke/rotate all certificates and credentials tied to it immediately.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "-----BEGIN (RSA |EC |OPENSSH |DSA |)PRIVATE KEY-----"
+      }
+    ]
+  },
+  {
+    "name": "Secret Exposure - Generic API Key Assignment in Body",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "The response body contains what appears to be a Generic API Key Assignment in Body, a credential that should never be exposed to clients.",
+    "remediation": "Move API keys out of responses/configs served to clients and into server-side secret storage.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)['\\\"]?api[_-]?key['\\\"]?\\s*[:=]\\s*['\\\"][0-9A-Za-z\\-_]{16,64}['\\\"]"
+      }
+    ]
+  },
+  {
+    "name": "Secret Exposure - Hardcoded Password in JSON/Config Response",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "The response body contains what appears to be a Hardcoded Password in JSON/Config Response, a credential that should never be exposed to clients.",
+    "remediation": "Never return credential fields in API responses; exclude them at the serialization layer.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)['\\\"]?(db_)?password['\\\"]?\\s*[:=]\\s*['\\\"][^'\\\"\\s]{6,}['\\\"]"
+      }
+    ]
+  },
+  {
+    "name": "Secret Exposure - Database Connection String Disclosure",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "The response body contains what appears to be a Database Connection String Disclosure, a credential that should never be exposed to clients.",
+    "remediation": "Remove embedded credentials from connection strings shown to clients; use a secrets manager and IAM-based auth where possible.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)\\b(mysql|postgres(?:ql)?|mongodb(?:\\+srv)?|redis|mssql|oracle)://[^\\s'\\\"<>]+:[^\\s'\\\"<>]+@[^\\s'\\\"<>]+"
+      }
+    ]
+  },
+  {
+    "name": "Secret Exposure - JSON Web Token (JWT) Leaked in Response Body",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "The response body contains what appears to be a JSON Web Token (JWT) Leaked in Response Body, a credential that should never be exposed to clients.",
+    "remediation": "Confirm this token is not a sensitive session/auth token being unintentionally echoed in error messages or logs returned to the client.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "\\beyJ[A-Za-z0-9_-]{10,}\\.[A-Za-z0-9_-]{10,}\\.[A-Za-z0-9_-_]{10,}\\b"
+      }
+    ]
+  },
+  {
+    "name": "Secret Exposure - Basic Auth Credentials in URL",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "The response body contains what appears to be a Basic Auth Credentials in URL, a credential that should never be exposed to clients.",
+    "remediation": "Never embed credentials in URLs; use Authorization headers and rotate any leaked credentials.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "https?://[^\\s/'\\\"<>]+:[^\\s/'\\\"<>]+@[^\\s/'\\\"<>]+"
+      }
+    ]
+  },
+  {
+    "name": "Secret Exposure - Generic Bearer Token Disclosure",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "The response body contains what appears to be a Generic Bearer Token Disclosure, a credential that should never be exposed to clients.",
+    "remediation": "Ensure Authorization headers containing live tokens are never reflected back into response bodies/logs.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)Authorization:\\s*Bearer\\s+[A-Za-z0-9\\-_\\.]{20,}"
+      }
+    ]
+  },
+  {
+    "name": "SQL Injection - MySQL Error Signature",
+    "type": "active",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "A single-quote/boolean payload triggered a MySQL-specific database error in the response, confirming unsanitized input reaches a SQL query.",
+    "remediation": "Use parameterized queries/prepared statements exclusively for this DBMS driver; never concatenate user input into SQL strings.",
+    "conditions": [
+      {
+        "payload": "' OR '1'='1",
+        "match": "response_body",
+        "pattern": "(?i)(you have an error in your sql syntax|warning: mysqli?_|mysql_fetch_array\\(\\)|check the manual that corresponds to your (mysql|mariadb))"
+      }
+    ]
+  },
+  {
+    "name": "SQL Injection - PostgreSQL Error Signature",
+    "type": "active",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "A single-quote/boolean payload triggered a PostgreSQL-specific database error in the response, confirming unsanitized input reaches a SQL query.",
+    "remediation": "Use parameterized queries/prepared statements exclusively for this DBMS driver; never concatenate user input into SQL strings.",
+    "conditions": [
+      {
+        "payload": "' OR '1'='1",
+        "match": "response_body",
+        "pattern": "(?i)(PostgreSQL.*?ERROR|pg_query\\(\\)|pg_exec\\(\\)|unterminated quoted string at or near)"
+      }
+    ]
+  },
+  {
+    "name": "SQL Injection - Microsoft SQL Server Error Signature",
+    "type": "active",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "A single-quote/boolean payload triggered a Microsoft SQL Server-specific database error in the response, confirming unsanitized input reaches a SQL query.",
+    "remediation": "Use parameterized queries/prepared statements exclusively for this DBMS driver; never concatenate user input into SQL strings.",
+    "conditions": [
+      {
+        "payload": "' OR '1'='1",
+        "match": "response_body",
+        "pattern": "(?i)(Unclosed quotation mark after the character string|System\\.Data\\.SqlClient\\.SqlException|\\[Microsoft\\]\\[ODBC SQL Server Driver\\]|Incorrect syntax near)"
+      }
+    ]
+  },
+  {
+    "name": "SQL Injection - Oracle Error Signature",
+    "type": "active",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "A single-quote/boolean payload triggered a Oracle-specific database error in the response, confirming unsanitized input reaches a SQL query.",
+    "remediation": "Use parameterized queries/prepared statements exclusively for this DBMS driver; never concatenate user input into SQL strings.",
+    "conditions": [
+      {
+        "payload": "' OR '1'='1",
+        "match": "response_body",
+        "pattern": "(?i)(ORA-\\d{5}|quoted string not properly terminated)"
+      }
+    ]
+  },
+  {
+    "name": "SQL Injection - SQLite Error Signature",
+    "type": "active",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "A single-quote/boolean payload triggered a SQLite-specific database error in the response, confirming unsanitized input reaches a SQL query.",
+    "remediation": "Use parameterized queries/prepared statements exclusively for this DBMS driver; never concatenate user input into SQL strings.",
+    "conditions": [
+      {
+        "payload": "' OR '1'='1",
+        "match": "response_body",
+        "pattern": "(?i)(SQLite\\/JDBCDriver|SQLite\\.Exception|System\\.Data\\.SQLite\\.SQLiteException|near \\\".*?\\\": syntax error)"
+      }
+    ]
+  },
+  {
+    "name": "SQL Injection - IBM DB2 Error Signature",
+    "type": "active",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "A single-quote/boolean payload triggered a IBM DB2-specific database error in the response, confirming unsanitized input reaches a SQL query.",
+    "remediation": "Use parameterized queries/prepared statements exclusively for this DBMS driver; never concatenate user input into SQL strings.",
+    "conditions": [
+      {
+        "payload": "' OR '1'='1",
+        "match": "response_body",
+        "pattern": "(?i)(CLI Driver.*?DB2|SQLSTATE=\\d{5}|DB2 SQL error)"
+      }
+    ]
+  },
+  {
+    "name": "SQL Injection - Sybase Error Signature",
+    "type": "active",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "A single-quote/boolean payload triggered a Sybase-specific database error in the response, confirming unsanitized input reaches a SQL query.",
+    "remediation": "Use parameterized queries/prepared statements exclusively for this DBMS driver; never concatenate user input into SQL strings.",
+    "conditions": [
+      {
+        "payload": "' OR '1'='1",
+        "match": "response_body",
+        "pattern": "(?i)(Sybase message|Warning.*?sybase.*?)"
+      }
+    ]
+  },
+  {
+    "name": "SQL Injection - Informix Error Signature",
+    "type": "active",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "A single-quote/boolean payload triggered a Informix-specific database error in the response, confirming unsanitized input reaches a SQL query.",
+    "remediation": "Use parameterized queries/prepared statements exclusively for this DBMS driver; never concatenate user input into SQL strings.",
+    "conditions": [
+      {
+        "payload": "' OR '1'='1",
+        "match": "response_body",
+        "pattern": "(?i)(com\\.informix\\.jdbc|Exception.*?Informix)"
+      }
+    ]
+  },
+  {
+    "name": "Server-Side Template Injection - Jinja2/Flask",
+    "type": "active",
+    "severity": "high",
+    "confidence": "certain",
+    "description": "A Jinja2/Flask template expression payload was evaluated server-side and its computed result appeared in the response, confirming SSTI which frequently escalates to remote code execution.",
+    "remediation": "Never render user-controlled input through the Jinja2/Flask template engine. Use logic-less/sandboxed templating and treat all user input as data, not template source.",
+    "conditions": [
+      {
+        "payload": "{{7*7}}",
+        "match": "response_body",
+        "pattern": "(?<![0-9])49(?![0-9])"
+      }
+    ]
+  },
+  {
+    "name": "Server-Side Template Injection - Twig",
+    "type": "active",
+    "severity": "high",
+    "confidence": "certain",
+    "description": "A Twig template expression payload was evaluated server-side and its computed result appeared in the response, confirming SSTI which frequently escalates to remote code execution.",
+    "remediation": "Never render user-controlled input through the Twig template engine. Use logic-less/sandboxed templating and treat all user input as data, not template source.",
+    "conditions": [
+      {
+        "payload": "{{7*'7'}}",
+        "match": "response_body",
+        "pattern": "\\b49\\b"
+      }
+    ]
+  },
+  {
+    "name": "Server-Side Template Injection - Freemarker",
+    "type": "active",
+    "severity": "high",
+    "confidence": "certain",
+    "description": "A Freemarker template expression payload was evaluated server-side and its computed result appeared in the response, confirming SSTI which frequently escalates to remote code execution.",
+    "remediation": "Never render user-controlled input through the Freemarker template engine. Use logic-less/sandboxed templating and treat all user input as data, not template source.",
+    "conditions": [
+      {
+        "payload": "${7*7}",
+        "match": "response_body",
+        "pattern": "(?<![0-9])49(?![0-9])"
+      }
+    ]
+  },
+  {
+    "name": "Server-Side Template Injection - Velocity",
+    "type": "active",
+    "severity": "high",
+    "confidence": "certain",
+    "description": "A Velocity template expression payload was evaluated server-side and its computed result appeared in the response, confirming SSTI which frequently escalates to remote code execution.",
+    "remediation": "Never render user-controlled input through the Velocity template engine. Use logic-less/sandboxed templating and treat all user input as data, not template source.",
+    "conditions": [
+      {
+        "payload": "#set($x=7*7)$x",
+        "match": "response_body",
+        "pattern": "(?<![0-9])49(?![0-9])"
+      }
+    ]
+  },
+  {
+    "name": "Server-Side Template Injection - Smarty",
+    "type": "active",
+    "severity": "high",
+    "confidence": "certain",
+    "description": "A Smarty template expression payload was evaluated server-side and its computed result appeared in the response, confirming SSTI which frequently escalates to remote code execution.",
+    "remediation": "Never render user-controlled input through the Smarty template engine. Use logic-less/sandboxed templating and treat all user input as data, not template source.",
+    "conditions": [
+      {
+        "payload": "{7*7}",
+        "match": "response_body",
+        "pattern": "(?<![0-9])49(?![0-9])"
+      }
+    ]
+  },
+  {
+    "name": "Server-Side Template Injection - ERB (Ruby)",
+    "type": "active",
+    "severity": "high",
+    "confidence": "certain",
+    "description": "A ERB (Ruby) template expression payload was evaluated server-side and its computed result appeared in the response, confirming SSTI which frequently escalates to remote code execution.",
+    "remediation": "Never render user-controlled input through the ERB (Ruby) template engine. Use logic-less/sandboxed templating and treat all user input as data, not template source.",
+    "conditions": [
+      {
+        "payload": "<%= 7*7 %>",
+        "match": "response_body",
+        "pattern": "(?<![0-9])49(?![0-9])"
+      }
+    ]
+  },
+  {
+    "name": "Server-Side Template Injection - Pug/Jade",
+    "type": "active",
+    "severity": "high",
+    "confidence": "certain",
+    "description": "A Pug/Jade template expression payload was evaluated server-side and its computed result appeared in the response, confirming SSTI which frequently escalates to remote code execution.",
+    "remediation": "Never render user-controlled input through the Pug/Jade template engine. Use logic-less/sandboxed templating and treat all user input as data, not template source.",
+    "conditions": [
+      {
+        "payload": "#{7*7}",
+        "match": "response_body",
+        "pattern": "(?<![0-9])49(?![0-9])"
+      }
+    ]
+  },
+  {
+    "name": "Server-Side Template Injection - Handlebars helperMissing",
+    "type": "active",
+    "severity": "high",
+    "confidence": "certain",
+    "description": "A Handlebars helperMissing template expression payload was evaluated server-side and its computed result appeared in the response, confirming SSTI which frequently escalates to remote code execution.",
+    "remediation": "Never render user-controlled input through the Handlebars helperMissing template engine. Use logic-less/sandboxed templating and treat all user input as data, not template source.",
+    "conditions": [
+      {
+        "payload": "{{#with \"s\" as |string|}}{{#with \"e\"}}{{#with split as |conv|}}{{this.pop}}{{/with}}{{/with}}{{/with}}",
+        "match": "response_body",
+        "pattern": "(?i)(helperMissing|Parse error on line)"
+      }
+    ]
+  },
+  {
+    "name": "Debug Mode / Stack Trace Disclosure - Django",
+    "type": "passive",
+    "severity": "medium",
+    "confidence": "firm",
+    "description": "A Django debug error page or verbose stack trace was returned to the client, exposing internal file paths, code structure, and dependency versions.",
+    "remediation": "Disable debug mode in production Django deployments and configure generic error handlers that never leak stack traces to end users.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)(DisallowedHost|Django Version:|Request Method:.*?Request URL:|django\\.core\\.exceptions)"
+      }
+    ]
+  },
+  {
+    "name": "Debug Mode / Stack Trace Disclosure - Flask/Werkzeug",
+    "type": "passive",
+    "severity": "medium",
+    "confidence": "firm",
+    "description": "A Flask/Werkzeug debug error page or verbose stack trace was returned to the client, exposing internal file paths, code structure, and dependency versions.",
+    "remediation": "Disable debug mode in production Flask/Werkzeug deployments and configure generic error handlers that never leak stack traces to end users.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)(Werkzeug Debugger|Traceback \\(most recent call last\\)|flask\\.app)"
+      }
+    ]
+  },
+  {
+    "name": "Debug Mode / Stack Trace Disclosure - Ruby on Rails",
+    "type": "passive",
+    "severity": "medium",
+    "confidence": "firm",
+    "description": "A Ruby on Rails debug error page or verbose stack trace was returned to the client, exposing internal file paths, code structure, and dependency versions.",
+    "remediation": "Disable debug mode in production Ruby on Rails deployments and configure generic error handlers that never leak stack traces to end users.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)(ActionController::RoutingError|app/controllers/.*?\\.rb:\\d+|Rails\\.root)"
+      }
+    ]
+  },
+  {
+    "name": "Debug Mode / Stack Trace Disclosure - Laravel/PHP",
+    "type": "passive",
+    "severity": "medium",
+    "confidence": "firm",
+    "description": "A Laravel/PHP debug error page or verbose stack trace was returned to the client, exposing internal file paths, code structure, and dependency versions.",
+    "remediation": "Disable debug mode in production Laravel/PHP deployments and configure generic error handlers that never leak stack traces to end users.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)(Whoops, looks like something went wrong|Illuminate\\\\Database\\\\QueryException|vendor/laravel/framework)"
+      }
+    ]
+  },
+  {
+    "name": "Debug Mode / Stack Trace Disclosure - ASP.NET (YSOD)",
+    "type": "passive",
+    "severity": "medium",
+    "confidence": "firm",
+    "description": "A ASP.NET (YSOD) debug error page or verbose stack trace was returned to the client, exposing internal file paths, code structure, and dependency versions.",
+    "remediation": "Disable debug mode in production ASP.NET (YSOD) deployments and configure generic error handlers that never leak stack traces to end users.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)(Server Error in '.*?' Application|System\\.Web\\.HttpException|\\[HttpException)"
+      }
+    ]
+  },
+  {
+    "name": "Debug Mode / Stack Trace Disclosure - Spring Boot",
+    "type": "passive",
+    "severity": "medium",
+    "confidence": "firm",
+    "description": "A Spring Boot debug error page or verbose stack trace was returned to the client, exposing internal file paths, code structure, and dependency versions.",
+    "remediation": "Disable debug mode in production Spring Boot deployments and configure generic error handlers that never leak stack traces to end users.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)(Whitelabel Error Page|org\\.springframework\\.[\\w.]+Exception|\\\"trace\\\"\\s*:\\s*\\\"java\\.lang)"
+      }
+    ]
+  },
+  {
+    "name": "Debug Mode / Stack Trace Disclosure - Express/Node.js",
+    "type": "passive",
+    "severity": "medium",
+    "confidence": "firm",
+    "description": "A Express/Node.js debug error page or verbose stack trace was returned to the client, exposing internal file paths, code structure, and dependency versions.",
+    "remediation": "Disable debug mode in production Express/Node.js deployments and configure generic error handlers that never leak stack traces to end users.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)(at Module\\._compile|Error\\s*\\n\\s+at .*?\\(.*?\\.js:\\d+:\\d+\\)|UnhandledPromiseRejectionWarning)"
+      }
+    ]
+  },
+  {
+    "name": "Debug Mode / Stack Trace Disclosure - Tomcat",
+    "type": "passive",
+    "severity": "medium",
+    "confidence": "firm",
+    "description": "A Tomcat debug error page or verbose stack trace was returned to the client, exposing internal file paths, code structure, and dependency versions.",
+    "remediation": "Disable debug mode in production Tomcat deployments and configure generic error handlers that never leak stack traces to end users.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)(org\\.apache\\.catalina|HTTP Status 500.*?Apache Tomcat)"
+      }
+    ]
+  },
+  {
+    "name": "Debug Mode / Stack Trace Disclosure - Next.js",
+    "type": "passive",
+    "severity": "medium",
+    "confidence": "firm",
+    "description": "A Next.js debug error page or verbose stack trace was returned to the client, exposing internal file paths, code structure, and dependency versions.",
+    "remediation": "Disable debug mode in production Next.js deployments and configure generic error handlers that never leak stack traces to end users.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)(Unhandled Runtime Error|__NEXT_DATA__.*?error)"
+      }
+    ]
+  },
+  {
+    "name": "Software Version Disclosure - Apache HTTP Server",
+    "type": "passive",
+    "severity": "low",
+    "confidence": "certain",
+    "description": "The Apache HTTP Server version is disclosed in a response header, helping attackers identify known CVEs affecting that exact version.",
+    "remediation": "Suppress or strip version-revealing headers for Apache HTTP Server in production configuration.",
+    "conditions": [
+      {
+        "target": "response_header",
+        "pattern": "(?i)^Server:\\s*Apache/[\\d.]+"
+      }
+    ]
+  },
+  {
+    "name": "Software Version Disclosure - Nginx",
+    "type": "passive",
+    "severity": "low",
+    "confidence": "certain",
+    "description": "The Nginx version is disclosed in a response header, helping attackers identify known CVEs affecting that exact version.",
+    "remediation": "Suppress or strip version-revealing headers for Nginx in production configuration.",
+    "conditions": [
+      {
+        "target": "response_header",
+        "pattern": "(?i)^Server:\\s*nginx/[\\d.]+"
+      }
+    ]
+  },
+  {
+    "name": "Software Version Disclosure - Microsoft IIS",
+    "type": "passive",
+    "severity": "low",
+    "confidence": "certain",
+    "description": "The Microsoft IIS version is disclosed in a response header, helping attackers identify known CVEs affecting that exact version.",
+    "remediation": "Suppress or strip version-revealing headers for Microsoft IIS in production configuration.",
+    "conditions": [
+      {
+        "target": "response_header",
+        "pattern": "(?i)^Server:\\s*Microsoft-IIS/[\\d.]+"
+      }
+    ]
+  },
+  {
+    "name": "Software Version Disclosure - PHP",
+    "type": "passive",
+    "severity": "low",
+    "confidence": "certain",
+    "description": "The PHP version is disclosed in a response header, helping attackers identify known CVEs affecting that exact version.",
+    "remediation": "Suppress or strip version-revealing headers for PHP in production configuration.",
+    "conditions": [
+      {
+        "target": "response_header",
+        "pattern": "(?i)^X-Powered-By:\\s*PHP/[\\d.]+"
+      }
+    ]
+  },
+  {
+    "name": "Software Version Disclosure - ASP.NET",
+    "type": "passive",
+    "severity": "low",
+    "confidence": "certain",
+    "description": "The ASP.NET version is disclosed in a response header, helping attackers identify known CVEs affecting that exact version.",
+    "remediation": "Suppress or strip version-revealing headers for ASP.NET in production configuration.",
+    "conditions": [
+      {
+        "target": "response_header",
+        "pattern": "(?i)^X-AspNet-Version:\\s*[\\d.]+"
+      }
+    ]
+  },
+  {
+    "name": "Software Version Disclosure - Express",
+    "type": "passive",
+    "severity": "low",
+    "confidence": "certain",
+    "description": "The Express version is disclosed in a response header, helping attackers identify known CVEs affecting that exact version.",
+    "remediation": "Suppress or strip version-revealing headers for Express in production configuration.",
+    "conditions": [
+      {
+        "target": "response_header",
+        "pattern": "(?i)^X-Powered-By:\\s*Express"
+      }
+    ]
+  },
+  {
+    "name": "Insecure Header Configuration - X-Frame-Options Missing/Permissive (ALLOW-FROM *)",
+    "type": "passive",
+    "severity": "medium",
+    "confidence": "firm",
+    "description": "ALLOW-FROM * permits framing from any origin, enabling clickjacking.",
+    "remediation": "Use 'X-Frame-Options: DENY' or a strict frame-ancestors CSP directive.",
+    "conditions": [
+      {
+        "target": "response_header",
+        "pattern": "(?i)^X-Frame-Options:\\s*ALLOW-FROM\\s+\\*"
+      }
+    ]
+  },
+  {
+    "name": "Insecure Header Configuration - Content-Security-Policy unsafe-inline + unsafe-eval",
+    "type": "passive",
+    "severity": "medium",
+    "confidence": "firm",
+    "description": "The CSP allows both unsafe-inline and unsafe-eval, substantially weakening XSS mitigation.",
+    "remediation": "Remove unsafe-inline/unsafe-eval; use nonces or hashes for required inline scripts.",
+    "conditions": [
+      {
+        "target": "response_header",
+        "pattern": "(?i)Content-Security-Policy:.*?unsafe-inline.*?unsafe-eval"
+      }
+    ]
+  },
+  {
+    "name": "Insecure Header Configuration - CSP Wildcard Source",
+    "type": "passive",
+    "severity": "medium",
+    "confidence": "firm",
+    "description": "A wildcard default-src in the CSP effectively disables the policy's origin restrictions.",
+    "remediation": "Scope default-src to an explicit allow-list of trusted origins.",
+    "conditions": [
+      {
+        "target": "response_header",
+        "pattern": "(?i)Content-Security-Policy:[^\\n]*\\bdefault-src\\s+\\*"
+      }
+    ]
+  },
+  {
+    "name": "Insecure Header Configuration - Set-Cookie Missing Secure Flag over HTTPS",
+    "type": "passive",
+    "severity": "medium",
+    "confidence": "firm",
+    "description": "A cookie was set without the Secure flag, allowing it to be transmitted over unencrypted HTTP connections if available.",
+    "remediation": "Set the Secure attribute on all session/auth cookies.",
+    "conditions": [
+      {
+        "target": "response_header",
+        "pattern": "(?i)^Set-Cookie:(?!.*?Secure)(?!.*?secure).*?$"
+      }
+    ]
+  },
+  {
+    "name": "Insecure Header Configuration - Set-Cookie Missing HttpOnly Flag",
+    "type": "passive",
+    "severity": "medium",
+    "confidence": "firm",
+    "description": "A session/auth cookie was set without HttpOnly, making it readable by client-side JavaScript and exploitable via XSS for session theft.",
+    "remediation": "Set the HttpOnly attribute on all session/authentication cookies.",
+    "conditions": [
+      {
+        "target": "response_header",
+        "pattern": "(?i)^Set-Cookie:(?!.*?HttpOnly).*?(session|auth|token|sid)="
+      }
+    ]
+  },
+  {
+    "name": "Insecure Header Configuration - Set-Cookie Missing SameSite Attribute",
+    "type": "passive",
+    "severity": "low",
+    "confidence": "firm",
+    "description": "A session cookie lacks a SameSite attribute, increasing CSRF exposure in modern browsers' default-lax fallback scenarios.",
+    "remediation": "Set SameSite=Strict or SameSite=Lax explicitly on session cookies.",
+    "conditions": [
+      {
+        "target": "response_header",
+        "pattern": "(?i)^Set-Cookie:(?!.*?SameSite).*?(session|auth|token|sid)="
+      }
+    ]
+  },
+  {
+    "name": "Insecure Header Configuration - Access-Control-Allow-Origin Wildcard with Credentials Risk",
+    "type": "passive",
+    "severity": "medium",
+    "confidence": "firm",
+    "description": "A wildcard CORS origin was returned; if combined with credentialed requests elsewhere this enables cross-origin data theft.",
+    "remediation": "Replace wildcard CORS with an explicit allow-list of trusted origins.",
+    "conditions": [
+      {
+        "target": "response_header",
+        "pattern": "(?i)Access-Control-Allow-Origin:\\s*\\*"
+      }
+    ]
+  },
+  {
+    "name": "Insecure Header Configuration - Strict-Transport-Security Short/Weak max-age",
+    "type": "passive",
+    "severity": "low",
+    "confidence": "firm",
+    "description": "An HSTS max-age under 1000 seconds provides minimal protection against SSL-stripping downgrade attacks.",
+    "remediation": "Set HSTS max-age to at least 31536000 (1 year) and include includeSubDomains/preload where appropriate.",
+    "conditions": [
+      {
+        "target": "response_header",
+        "pattern": "(?i)Strict-Transport-Security:\\s*max-age=[0-9]{1,3}\\b(?!\\d)"
+      }
+    ]
+  },
+  {
+    "name": "Insecure Header Configuration - X-XSS-Protection Disabled",
+    "type": "passive",
+    "severity": "info",
+    "confidence": "firm",
+    "description": "The legacy X-XSS-Protection header is explicitly disabled (though deprecated, its absence/disabling on legacy browsers removes a defense layer).",
+    "remediation": "Rely on a strong CSP instead; if supporting legacy browsers, avoid explicitly disabling this header.",
+    "conditions": [
+      {
+        "target": "response_header",
+        "pattern": "(?i)^X-XSS-Protection:\\s*0\\b"
+      }
+    ]
+  },
+  {
+    "name": "SSRF - AWS EC2 IMDS Metadata Credential Leak",
+    "type": "active",
+    "severity": "high",
+    "confidence": "certain",
+    "description": "A server-side request forgery payload caused the server to fetch the AWS EC2 IMDS instance metadata endpoint, leaking temporary cloud credentials directly into the response.",
+    "remediation": "Block outbound requests to cloud metadata IP ranges (169.254.169.254, metadata.google.internal) at the application/network layer, enforce IMDSv2 (AWS), and validate/allow-list any user-supplied URLs used in server-side fetches.",
+    "conditions": [
+      {
+        "payload": "http://169.254.169.254/latest/meta-data/iam/security-credentials/",
+        "match": "response_body",
+        "pattern": "(?i)(\\\"AccessKeyId\\\"|\\\"SecretAccessKey\\\"|\\\"Token\\\"\\s*:\\s*\\\"[A-Za-z0-9/+=]{50,})"
+      }
+    ]
+  },
+  {
+    "name": "SSRF - GCP Metadata Server Metadata Credential Leak",
+    "type": "active",
+    "severity": "high",
+    "confidence": "certain",
+    "description": "A server-side request forgery payload caused the server to fetch the GCP Metadata Server instance metadata endpoint, leaking temporary cloud credentials directly into the response.",
+    "remediation": "Block outbound requests to cloud metadata IP ranges (169.254.169.254, metadata.google.internal) at the application/network layer, enforce IMDSv2 (AWS), and validate/allow-list any user-supplied URLs used in server-side fetches.",
+    "conditions": [
+      {
+        "payload": "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token",
+        "match": "response_body",
+        "pattern": "(?i)\\\"access_token\\\"\\s*:\\s*\\\"ya29\\."
+      }
+    ]
+  },
+  {
+    "name": "SSRF - Azure IMDS Metadata Credential Leak",
+    "type": "active",
+    "severity": "high",
+    "confidence": "certain",
+    "description": "A server-side request forgery payload caused the server to fetch the Azure IMDS instance metadata endpoint, leaking temporary cloud credentials directly into the response.",
+    "remediation": "Block outbound requests to cloud metadata IP ranges (169.254.169.254, metadata.google.internal) at the application/network layer, enforce IMDSv2 (AWS), and validate/allow-list any user-supplied URLs used in server-side fetches.",
+    "conditions": [
+      {
+        "payload": "http://169.254.169.254/metadata/instance?api-version=2021-02-01",
+        "match": "response_body",
+        "pattern": "(?i)\\\"compute\\\"\\s*:\\s*\\{|\\\"subscriptionId\\\""
+      }
+    ]
+  },
+  {
+    "name": "SSRF - DigitalOcean Metadata Metadata Credential Leak",
+    "type": "active",
+    "severity": "high",
+    "confidence": "certain",
+    "description": "A server-side request forgery payload caused the server to fetch the DigitalOcean Metadata instance metadata endpoint, leaking temporary cloud credentials directly into the response.",
+    "remediation": "Block outbound requests to cloud metadata IP ranges (169.254.169.254, metadata.google.internal) at the application/network layer, enforce IMDSv2 (AWS), and validate/allow-list any user-supplied URLs used in server-side fetches.",
+    "conditions": [
+      {
+        "payload": "http://169.254.169.254/metadata/v1/",
+        "match": "response_body",
+        "pattern": "(?i)\\\"droplet_id\\\"|\\\"region\\\"\\s*:\\s*\\\""
+      }
+    ]
+  },
+  {
+    "name": "CMS Sensitive File Exposure - WordPress wp-config.php Exposure",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "Content consistent with a WordPress wp-config.php Exposure sensitive configuration file was returned, potentially exposing database credentials.",
+    "remediation": "Block direct web access to configuration files via web server rules and remove debug logs from web-accessible directories.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)define\\(\\s*['\\\"]DB_PASSWORD['\\\"]\\s*,\\s*['\\\"][^'\\\"]+['\\\"]\\s*\\)"
+      }
+    ]
+  },
+  {
+    "name": "CMS Sensitive File Exposure - WordPress Debug Log Exposure",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "Content consistent with a WordPress Debug Log Exposure sensitive configuration file was returned, potentially exposing database credentials.",
+    "remediation": "Block direct web access to configuration files via web server rules and remove debug logs from web-accessible directories.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)\\[\\d{2}-\\w{3}-\\d{4}.*?\\] PHP (Warning|Fatal error|Notice):"
+      }
+    ]
+  },
+  {
+    "name": "CMS Sensitive File Exposure - Drupal Database Settings Exposure",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "Content consistent with a Drupal Database Settings Exposure sensitive configuration file was returned, potentially exposing database credentials.",
+    "remediation": "Block direct web access to configuration files via web server rules and remove debug logs from web-accessible directories.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)\\$databases\\['default'\\]\\['default'\\]\\s*=\\s*array"
+      }
+    ]
+  },
+  {
+    "name": "CMS Sensitive File Exposure - Joomla Configuration Exposure",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "Content consistent with a Joomla Configuration Exposure sensitive configuration file was returned, potentially exposing database credentials.",
+    "remediation": "Block direct web access to configuration files via web server rules and remove debug logs from web-accessible directories.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)public\\s+\\$password\\s*=\\s*['\\\"][^'\\\"]+['\\\"];\\s*//.*?Joomla|\\\\\\$_password"
+      }
+    ]
+  },
+  {
+    "name": "CMS Sensitive File Exposure - Magento Database Config Exposure",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "Content consistent with a Magento Database Config Exposure sensitive configuration file was returned, potentially exposing database credentials.",
+    "remediation": "Block direct web access to configuration files via web server rules and remove debug logs from web-accessible directories.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)'password'\\s*=>\\s*'[^']+'[\\s\\S]{0,80}'dbname'\\s*=>"
+      }
+    ]
+  },
+  {
+    "name": "Sensitive File Exposure - Git Internal Config (.git/config)",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "The response body matches the structure of a Git Internal Config (.git/config), which should never be served over HTTP.",
+    "remediation": "Add explicit deny rules in the web server/reverse proxy for dotfiles and build artifacts, and ensure CI does not copy these into the web root.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)\\[core\\]\\s*\\n\\s*repositoryformatversion"
+      }
+    ]
+  },
+  {
+    "name": "Sensitive File Exposure - Environment File (.env) Exposure",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "The response body matches the structure of a Environment File (.env) Exposure, which should never be served over HTTP.",
+    "remediation": "Add explicit deny rules in the web server/reverse proxy for dotfiles and build artifacts, and ensure CI does not copy these into the web root.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)^(DB_PASSWORD|APP_KEY|SECRET_KEY|API_KEY)=.+$"
+      }
+    ]
+  },
+  {
+    "name": "Sensitive File Exposure - Docker Compose Secrets Exposure",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "The response body matches the structure of a Docker Compose Secrets Exposure, which should never be served over HTTP.",
+    "remediation": "Add explicit deny rules in the web server/reverse proxy for dotfiles and build artifacts, and ensure CI does not copy these into the web root.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)version:\\s*['\\\"]?[\\d.]+['\\\"]?\\s*\\nservices:[\\s\\S]{0,300}(PASSWORD|SECRET)\\s*[:=]"
+      }
+    ]
+  },
+  {
+    "name": "Sensitive File Exposure - Kubernetes Secret Manifest Exposure",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "The response body matches the structure of a Kubernetes Secret Manifest Exposure, which should never be served over HTTP.",
+    "remediation": "Add explicit deny rules in the web server/reverse proxy for dotfiles and build artifacts, and ensure CI does not copy these into the web root.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)kind:\\s*Secret[\\s\\S]{0,200}data:\\s*\\n\\s+\\w+:\\s*[A-Za-z0-9+/=]{16,}"
+      }
+    ]
+  },
+  {
+    "name": "Sensitive File Exposure - SSH known_hosts/authorized_keys Exposure",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "The response body matches the structure of a SSH known_hosts/authorized_keys Exposure, which should never be served over HTTP.",
+    "remediation": "Add explicit deny rules in the web server/reverse proxy for dotfiles and build artifacts, and ensure CI does not copy these into the web root.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "ssh-(rsa|ed25519|dss) [A-Za-z0-9+/=]{100,}"
+      }
+    ]
+  },
+  {
+    "name": "Sensitive File Exposure - AWS CLI Credentials File Exposure",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "The response body matches the structure of a AWS CLI Credentials File Exposure, which should never be served over HTTP.",
+    "remediation": "Add explicit deny rules in the web server/reverse proxy for dotfiles and build artifacts, and ensure CI does not copy these into the web root.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)\\[default\\]\\s*\\naws_access_key_id\\s*=\\s*AKIA"
+      }
+    ]
+  },
+  {
+    "name": "Sensitive File Exposure - Composer/NPM Lockfile with Private Registry Tokens",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "The response body matches the structure of a Composer/NPM Lockfile with Private Registry Tokens, which should never be served over HTTP.",
+    "remediation": "Add explicit deny rules in the web server/reverse proxy for dotfiles and build artifacts, and ensure CI does not copy these into the web root.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)_auth\\s*=\\s*['\\\"][A-Za-z0-9+/=]{20,}['\\\"]"
+      }
+    ]
+  },
+  {
+    "name": "OS Command Injection - Linux/Unix id command",
+    "type": "active",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "A shell metacharacter payload executed a 'command'-style command, and its output appeared verbatim in the response, confirming OS command injection.",
+    "remediation": "Never pass user-controlled input to a shell. Use language-native APIs (e.g. library calls instead of shell-outs) and strict input allow-listing if shell invocation is unavoidable.",
+    "conditions": [
+      {
+        "payload": "; id #",
+        "match": "response_body",
+        "pattern": "uid=\\d+\\([a-zA-Z0-9_-]+\\)\\s+gid=\\d+"
+      }
+    ]
+  },
+  {
+    "name": "OS Command Injection - Linux/Unix cat /etc/passwd",
+    "type": "active",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "A shell metacharacter payload executed a '/etc/passwd'-style command, and its output appeared verbatim in the response, confirming OS command injection.",
+    "remediation": "Never pass user-controlled input to a shell. Use language-native APIs (e.g. library calls instead of shell-outs) and strict input allow-listing if shell invocation is unavoidable.",
+    "conditions": [
+      {
+        "payload": "; cat /etc/passwd #",
+        "match": "response_body",
+        "pattern": "root:.*?:0:0:"
+      }
+    ]
+  },
+  {
+    "name": "OS Command Injection - Windows whoami",
+    "type": "active",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "A shell metacharacter payload executed a 'whoami'-style command, and its output appeared verbatim in the response, confirming OS command injection.",
+    "remediation": "Never pass user-controlled input to a shell. Use language-native APIs (e.g. library calls instead of shell-outs) and strict input allow-listing if shell invocation is unavoidable.",
+    "conditions": [
+      {
+        "payload": "& whoami &",
+        "match": "response_body",
+        "pattern": "(?i)[\\w\\-]+\\\\[\\w\\-]+\\s*$|nt authority\\\\system"
+      }
+    ]
+  },
+  {
+    "name": "OS Command Injection - Windows dir/type",
+    "type": "active",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "A shell metacharacter payload executed a 'dir/type'-style command, and its output appeared verbatim in the response, confirming OS command injection.",
+    "remediation": "Never pass user-controlled input to a shell. Use language-native APIs (e.g. library calls instead of shell-outs) and strict input allow-listing if shell invocation is unavoidable.",
+    "conditions": [
+      {
+        "payload": "& type C:\\Windows\\win.ini &",
+        "match": "response_body",
+        "pattern": "(?i)\\[fonts\\]|\\[extensions\\]"
+      }
+    ]
+  },
+  {
+    "name": "OS Command Injection - PowerShell Get-Process",
+    "type": "active",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "A shell metacharacter payload executed a 'Get-Process'-style command, and its output appeared verbatim in the response, confirming OS command injection.",
+    "remediation": "Never pass user-controlled input to a shell. Use language-native APIs (e.g. library calls instead of shell-outs) and strict input allow-listing if shell invocation is unavoidable.",
+    "conditions": [
+      {
+        "payload": "; Get-Process | Out-String",
+        "match": "response_body",
+        "pattern": "(?i)ProcessName\\s+Id\\s+CPU"
+      }
+    ]
+  },
+  {
+    "name": "Insecure Deserialization - Java (ysoserial-style)",
+    "type": "active",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "A crafted Java (ysoserial-style) serialized-object payload triggered deserialization-related exceptions or class-loading errors in the response, indicating untrusted data reaches a native deserialization routine \u2014 a common RCE vector.",
+    "remediation": "Avoid deserializing untrusted data with Java (ysoserial-style)'s native mechanism. Use safe, schema-validated formats (JSON/Protobuf) and allow-list permitted classes if native deserialization is unavoidable.",
+    "conditions": [
+      {
+        "payload": "rO0AB",
+        "match": "response_body",
+        "pattern": "(?i)(java\\.io\\.(ObjectInputStream|InvalidClassException)|CommonsCollections|org\\.apache\\.commons\\.collections\\.functors)"
+      }
+    ]
+  },
+  {
+    "name": "Insecure Deserialization - PHP unserialize()",
+    "type": "active",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "A crafted PHP unserialize() serialized-object payload triggered deserialization-related exceptions or class-loading errors in the response, indicating untrusted data reaches a native deserialization routine \u2014 a common RCE vector.",
+    "remediation": "Avoid deserializing untrusted data with PHP unserialize()'s native mechanism. Use safe, schema-validated formats (JSON/Protobuf) and allow-list permitted classes if native deserialization is unavoidable.",
+    "conditions": [
+      {
+        "payload": "O:8:\"stdClass\":0:{}",
+        "match": "response_body",
+        "pattern": "(?i)(unserialize\\(\\): Error at offset|__wakeup\\(\\)|__destruct\\(\\))"
+      }
+    ]
+  },
+  {
+    "name": "Insecure Deserialization - Python pickle",
+    "type": "active",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "A crafted Python pickle serialized-object payload triggered deserialization-related exceptions or class-loading errors in the response, indicating untrusted data reaches a native deserialization routine \u2014 a common RCE vector.",
+    "remediation": "Avoid deserializing untrusted data with Python pickle's native mechanism. Use safe, schema-validated formats (JSON/Protobuf) and allow-list permitted classes if native deserialization is unavoidable.",
+    "conditions": [
+      {
+        "payload": "cos\nsystem\n(S'id'\ntR.",
+        "match": "response_body",
+        "pattern": "(?i)(pickle\\.UnpicklingError|_pickle\\.UnpicklingError)"
+      }
+    ]
+  },
+  {
+    "name": "Insecure Deserialization - .NET ViewState/BinaryFormatter",
+    "type": "active",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "A crafted .NET ViewState/BinaryFormatter serialized-object payload triggered deserialization-related exceptions or class-loading errors in the response, indicating untrusted data reaches a native deserialization routine \u2014 a common RCE vector.",
+    "remediation": "Avoid deserializing untrusted data with .NET ViewState/BinaryFormatter's native mechanism. Use safe, schema-validated formats (JSON/Protobuf) and allow-list permitted classes if native deserialization is unavoidable.",
+    "conditions": [
+      {
+        "payload": "/wEPDwUKLTQy",
+        "match": "response_body",
+        "pattern": "(?i)(System\\.Runtime\\.Serialization|ViewStateException|MAC validation)"
+      }
+    ]
+  },
+  {
+    "name": "Insecure Deserialization - Ruby Marshal",
+    "type": "active",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "A crafted Ruby Marshal serialized-object payload triggered deserialization-related exceptions or class-loading errors in the response, indicating untrusted data reaches a native deserialization routine \u2014 a common RCE vector.",
+    "remediation": "Avoid deserializing untrusted data with Ruby Marshal's native mechanism. Use safe, schema-validated formats (JSON/Protobuf) and allow-list permitted classes if native deserialization is unavoidable.",
+    "conditions": [
+      {
+        "payload": "\u0004\b{\u0006:\u0006aI\"\u0006a\u0006:\u0006ET",
+        "match": "response_body",
+        "pattern": "(?i)(Marshal::|ArgumentError: marshal data)"
+      }
+    ]
+  },
+  {
+    "name": "Open Redirect via Unvalidated next/return_url Parameter",
+    "type": "active",
+    "severity": "medium",
+    "confidence": "firm",
+    "description": "A redirect parameter pointing to an external attacker-controlled domain caused the server to issue a 3xx redirect to that domain, which can be chained with phishing or OAuth token theft.",
+    "remediation": "Validate redirect targets against an exact-match allow-list of internal paths/domains; never redirect to a raw user-supplied URL.",
+    "conditions": [
+      {
+        "payload": "//evil-redirect-test.example.com",
+        "match": "response_body",
+        "pattern": "(?i)Location:\\s*(https?:)?//evil-redirect-test\\.example\\.com"
+      }
+    ]
+  },
+  {
+    "name": "CRLF Injection / HTTP Response Splitting",
+    "type": "active",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "A payload containing encoded CRLF sequences resulted in an injected header appearing in the raw response, confirming HTTP response splitting which can lead to cache poisoning, XSS, or session fixation.",
+    "remediation": "Strictly validate and encode any user input placed into HTTP headers; use framework APIs that reject embedded CR/LF rather than building raw header strings.",
+    "conditions": [
+      {
+        "payload": "%0d%0aX-Injected-Header: lawcybug-crlf-test",
+        "match": "response_header",
+        "pattern": "(?i)^X-Injected-Header:\\s*lawcybug-crlf-test"
+      }
+    ]
+  },
+  {
+    "name": "Host Header Injection - Password Reset Poisoning",
+    "type": "active",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "Submitting a forged Host header caused the server to reflect that attacker-controlled host back into the response body (e.g. in a generated link), indicating the application trusts the Host header for link generation \u2014 exploitable for password-reset poisoning and account takeover.",
+    "remediation": "Never trust the Host header for generating absolute URLs/links. Use a fixed, server-side-configured canonical hostname instead.",
+    "conditions": [
+      {
+        "payload": "Host: evil-host-injection-test.example.com",
+        "match": "response_body",
+        "pattern": "(?i)evil-host-injection-test\\.example\\.com"
+      }
+    ]
+  },
+  {
+    "name": "HTTP Request Smuggling - Content-Length/Transfer-Encoding Discrepancy Indicator",
+    "type": "active",
+    "severity": "medium",
+    "confidence": "tentative",
+    "description": "A request containing both a Content-Length and a Transfer-Encoding: chunked header produced an unexpected response, which may indicate front-end/back-end parsing discrepancies exploitable for request smuggling. Manual confirmation with a differential timing test is required.",
+    "remediation": "Ensure all components in the request chain (load balancer, CDN, app server) agree on a single, strict HTTP parsing standard; disable support for ambiguous Transfer-Encoding/Content-Length combinations.",
+    "conditions": [
+      {
+        "payload": "Transfer-Encoding: chunked\r\nContent-Length: 4",
+        "match": "status",
+        "status": 400
+      }
+    ]
+  },
+  {
+    "name": "Swagger/OpenAPI Specification Publicly Exposed",
+    "type": "passive",
+    "severity": "low",
+    "confidence": "firm",
+    "description": "An OpenAPI/Swagger specification document is accessible, fully enumerating the API's endpoints, parameters, and (sometimes) internal-only routes.",
+    "remediation": "Restrict access to API documentation endpoints in production to authenticated internal users, or remove them entirely from production builds.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)\\\"swagger\\\"\\s*:\\s*\\\"[\\d.]+\\\"|\\\"openapi\\\"\\s*:\\s*\\\"[\\d.]+\\\""
+      }
+    ]
+  },
+  {
+    "name": "GraphQL Batched Query Abuse Indicator",
+    "type": "active",
+    "severity": "medium",
+    "confidence": "tentative",
+    "description": "Submitting an array of repeated mutation/query objects in a single GraphQL request was accepted and processed without a batch-size limit, which can be abused to bypass rate limiting (e.g. for credential stuffing or coupon brute-forcing).",
+    "remediation": "Enforce a strict maximum batch size per GraphQL request and apply rate limiting at the resolver level, not just per HTTP request.",
+    "conditions": [
+      {
+        "payload": "[{\"query\":\"{__typename}\"},{\"query\":\"{__typename}\"},{\"query\":\"{__typename}\"},{\"query\":\"{__typename}\"},{\"query\":\"{__typename}\"}]",
+        "match": "status",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "name": "GraphQL Field Suggestion Information Leak",
+    "type": "active",
+    "severity": "low",
+    "confidence": "firm",
+    "description": "Querying a deliberately misspelled field name caused the server to suggest the correct (real) field name in its error message, even with introspection disabled \u2014 leaking schema details.",
+    "remediation": "Disable the 'did you mean' field-suggestion behavior in production GraphQL error formatting.",
+    "conditions": [
+      {
+        "payload": "{\"query\":\"{usrname}\"}",
+        "match": "response_body",
+        "pattern": "(?i)did you mean"
+      }
+    ]
+  },
+  {
+    "name": "Actuator/Management Endpoint Exposure (Spring Boot)",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "A Spring Boot Actuator management endpoint (env, heapdump, beans, etc.) is publicly reachable, often exposing environment variables, credentials, or enabling remote code execution via the /jolokia or /env write endpoints.",
+    "remediation": "Disable or restrict Actuator endpoints to an internal management port with authentication; never expose env/heapdump publicly.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)\\\"_links\\\"\\s*:\\s*\\{[\\s\\S]{0,200}\\\"self\\\"[\\s\\S]{0,200}\\\"health\\\""
+      }
+    ]
+  },
+  {
+    "name": "JWT - Algorithm Confusion (RS256 to HS256)",
+    "type": "active",
+    "severity": "high",
+    "confidence": "certain",
+    "description": "A token re-signed as HS256 using the server's known RSA public key as the HMAC secret was accepted, confirming the verification logic does not enforce the expected signing algorithm \u2014 a critical authentication bypass (CVE-class jwt algorithm confusion).",
+    "remediation": "Explicitly enforce and pin the expected JWT algorithm server-side; never derive the verification algorithm from the token's own header.",
+    "conditions": [
+      {
+        "payload": "REPLACE_WITH_HS256_RESIGNED_TOKEN_USING_RSA_PUBLIC_KEY_AS_SECRET",
+        "match": "status",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "name": "JWT - Kid Header SQL Injection / Path Traversal",
+    "type": "active",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "A JWT with a manipulated 'kid' (key ID) header containing SQLi/path-traversal payloads caused a database error or file-read error, indicating the kid value is used unsafely to look up the verification key.",
+    "remediation": "Validate the 'kid' header against a strict allow-list of known key identifiers before using it in any lookup; never use it directly in file paths or SQL queries.",
+    "conditions": [
+      {
+        "payload": "eyJhbGciOiJIUzI1NiIsImtpZCI6Ii4uLy4uLy4uL2V0Yy9wYXNzd2QiLCJ0eXAiOiJKV1QifQ.eyJzdWIiOiJ4In0.",
+        "match": "response_body",
+        "pattern": "(?i)(root:.*?:0:0:|sql syntax)"
+      }
+    ]
+  },
+  {
+    "name": "JWT - Expired Token Still Accepted",
+    "type": "active",
+    "severity": "high",
+    "confidence": "certain",
+    "description": "A JWT with an 'exp' claim set far in the past was still accepted by the server (HTTP 200 authenticated response), confirming expiration is not enforced server-side.",
+    "remediation": "Always validate the 'exp' (and 'nbf') claims server-side on every request, independent of client-side token handling.",
+    "conditions": [
+      {
+        "payload": "REPLACE_WITH_VALID_SIGNATURE_TOKEN_EXP_SET_TO_PAST",
+        "match": "status",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "name": "Missing Rate Limit on OTP/2FA Verification Endpoint",
+    "type": "active",
+    "severity": "high",
+    "confidence": "tentative",
+    "description": "Submitting 10 sequential incorrect OTP codes within the request window did not trigger a lockout, CAPTCHA, or 429 response, indicating the OTP endpoint can likely be brute-forced.",
+    "remediation": "Implement strict, progressively-increasing rate limiting and account lockout/CAPTCHA on OTP and 2FA verification endpoints.",
+    "conditions": [
+      {
+        "payload": "000000",
+        "match": "status",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "name": "Price Manipulation via Client-Supplied Unit Price",
+    "type": "active",
+    "severity": "high",
+    "confidence": "tentative",
+    "description": "An order/checkout request accepted a client-supplied 'price' field that overrode the server-computed catalog price, indicating price trust is misplaced on the client side.",
+    "remediation": "Always recompute prices server-side from the authoritative product catalog at checkout time; never trust client-supplied price fields.",
+    "conditions": [
+      {
+        "payload": "{\"item_id\":1,\"price\":0.01}",
+        "match": "status",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "name": "Workflow Step Skipping (Forced Browsing Past Payment)",
+    "type": "active",
+    "severity": "high",
+    "confidence": "tentative",
+    "description": "Directly requesting a post-payment confirmation/fulfillment endpoint without a corresponding completed-payment state succeeded, indicating the application does not enforce workflow step ordering server-side.",
+    "remediation": "Maintain server-side workflow/state machine validation for every multi-step process (e.g. checkout, onboarding) and reject requests that skip required prior steps.",
+    "conditions": [
+      {
+        "payload": "{\"order_id\":\"test\",\"step\":\"fulfill\"}",
+        "match": "status",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "name": "Information Disclosure - Internal Hostname/FQDN Disclosure",
+    "type": "passive",
+    "severity": "low",
+    "confidence": "firm",
+    "description": "The response body discloses internal hostname/fqdn disclosure, which can aid attacker reconnaissance or directly expose sensitive resources.",
+    "remediation": "Strip internal identifiers, source paths, and infrastructure references from any response/error reachable by external clients.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "\\b[\\w-]+\\.(internal|corp|local|intranet)\\b"
+      }
+    ]
+  },
+  {
+    "name": "Information Disclosure - Stack Trace Source Path Disclosure (Unix)",
+    "type": "passive",
+    "severity": "low",
+    "confidence": "firm",
+    "description": "The response body discloses stack trace source path disclosure (unix), which can aid attacker reconnaissance or directly expose sensitive resources.",
+    "remediation": "Strip internal identifiers, source paths, and infrastructure references from any response/error reachable by external clients.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "/(home|var/www|opt|srv)/[\\w./-]+\\.(php|py|rb|java|js)"
+      }
+    ]
+  },
+  {
+    "name": "Information Disclosure - Stack Trace Source Path Disclosure (Windows)",
+    "type": "passive",
+    "severity": "low",
+    "confidence": "firm",
+    "description": "The response body discloses stack trace source path disclosure (windows), which can aid attacker reconnaissance or directly expose sensitive resources.",
+    "remediation": "Strip internal identifiers, source paths, and infrastructure references from any response/error reachable by external clients.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "[A-Za-z]:\\\\\\\\[\\w\\\\\\\\. -]+\\.(cs|aspx|vb)"
+      }
+    ]
+  },
+  {
+    "name": "Information Disclosure - Email Address Bulk Disclosure",
+    "type": "passive",
+    "severity": "low",
+    "confidence": "firm",
+    "description": "The response body discloses email address bulk disclosure, which can aid attacker reconnaissance or directly expose sensitive resources.",
+    "remediation": "Strip internal identifiers, source paths, and infrastructure references from any response/error reachable by external clients.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?:[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}[\\s,\\\"\\]]+){3,}"
+      }
+    ]
+  },
+  {
+    "name": "Information Disclosure - Internal API Endpoint Comment Disclosure",
+    "type": "passive",
+    "severity": "low",
+    "confidence": "firm",
+    "description": "The response body discloses internal api endpoint comment disclosure, which can aid attacker reconnaissance or directly expose sensitive resources.",
+    "remediation": "Strip internal identifiers, source paths, and infrastructure references from any response/error reachable by external clients.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)<!--.*?/(api|internal)/v\\d+/.*?-->"
+      }
+    ]
+  },
+  {
+    "name": "Information Disclosure - Cloud Storage Bucket URL Disclosure (S3/GCS/Azure Blob)",
+    "type": "passive",
+    "severity": "low",
+    "confidence": "firm",
+    "description": "The response body discloses cloud storage bucket url disclosure (s3/gcs/azure blob), which can aid attacker reconnaissance or directly expose sensitive resources.",
+    "remediation": "Strip internal identifiers, source paths, and infrastructure references from any response/error reachable by external clients.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)https?://[\\w.-]+\\.(s3\\.amazonaws\\.com|s3-[\\w-]+\\.amazonaws\\.com|storage\\.googleapis\\.com|blob\\.core\\.windows\\.net)/[\\w./-]+"
+      }
+    ]
+  },
+  {
+    "name": "OAuth - PKCE Not Enforced on Authorization Code Flow",
+    "type": "passive",
+    "severity": "medium",
+    "confidence": "tentative",
+    "description": "An authorization request using response_type=code did not include a code_challenge parameter, indicating PKCE is not enforced, leaving public clients (mobile/SPA) exposed to authorization code interception attacks.",
+    "remediation": "Require code_challenge/code_challenge_method on every authorization request and reject code exchanges missing a matching code_verifier.",
+    "conditions": [
+      {
+        "target": "request_header",
+        "pattern": "(?i)response_type=code(?!.*code_challenge)"
+      }
+    ]
+  },
+  {
+    "name": "SAML - Signature Validation Bypass (XML Comment Injection)",
+    "type": "active",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "Injecting an XML comment inside the NameID/Subject element of a SAML assertion was still accepted, suggesting the signature validation logic parses the element value with the comment stripped while the signature was computed on the original \u2014 a known SAML signature-wrapping bypass.",
+    "remediation": "Use a SAML library that canonicalizes and validates the exact signed content, and reject assertions containing unexpected XML comments/extra elements inside signed nodes.",
+    "conditions": [
+      {
+        "payload": "<NameID>admin<!--x-->@victim.com</NameID>",
+        "match": "status",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "name": "SSO - IDP-Initiated Login Without Audience Restriction Check",
+    "type": "active",
+    "severity": "medium",
+    "confidence": "tentative",
+    "description": "An assertion issued for a different intended audience (aud/Audience) was still accepted by this service provider, indicating cross-service assertion replay is possible.",
+    "remediation": "Strictly validate the Audience/aud restriction in every SSO assertion against this exact service provider's entity ID.",
+    "conditions": [
+      {
+        "payload": "REPLACE_WITH_ASSERTION_AUD_FOR_OTHER_SP",
+        "match": "status",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "name": "Insecure File Upload - Double Extension Bypass (.php.jpg)",
+    "type": "active",
+    "severity": "high",
+    "confidence": "tentative",
+    "description": "A file upload using the 'Double Extension Bypass (.php.jpg)' technique was accepted and the payload was later retrievable/executable, indicating insufficient server-side file-type and content validation.",
+    "remediation": "Validate uploaded file content (not just extension/Content-Type) server-side, store uploads outside the web root with randomized names, and disable script execution in upload directories.",
+    "conditions": [
+      {
+        "payload": "shell.php.jpg",
+        "match": "response_body",
+        "pattern": "(?i)(<\\?php|shell\\.php\\.jpg)"
+      }
+    ]
+  },
+  {
+    "name": "Insecure File Upload - Null Byte Extension Bypass",
+    "type": "active",
+    "severity": "high",
+    "confidence": "tentative",
+    "description": "A file upload using the 'Null Byte Extension Bypass' technique was accepted and the payload was later retrievable/executable, indicating insufficient server-side file-type and content validation.",
+    "remediation": "Validate uploaded file content (not just extension/Content-Type) server-side, store uploads outside the web root with randomized names, and disable script execution in upload directories.",
+    "conditions": [
+      {
+        "payload": "shell.php%00.jpg",
+        "match": "response_body",
+        "pattern": "(?i)<\\?php"
+      }
+    ]
+  },
+  {
+    "name": "Insecure File Upload - Content-Type Spoofing (image/jpeg with PHP payload)",
+    "type": "active",
+    "severity": "high",
+    "confidence": "tentative",
+    "description": "A file upload using the 'Content-Type Spoofing (image/jpeg with PHP payload)' technique was accepted and the payload was later retrievable/executable, indicating insufficient server-side file-type and content validation.",
+    "remediation": "Validate uploaded file content (not just extension/Content-Type) server-side, store uploads outside the web root with randomized names, and disable script execution in upload directories.",
+    "conditions": [
+      {
+        "payload": "<?php echo 'lawcybug-rce-test'; ?>",
+        "match": "response_body",
+        "pattern": "lawcybug-rce-test"
+      }
+    ]
+  },
+  {
+    "name": "Insecure File Upload - SVG with Embedded Script (Stored XSS via Upload)",
+    "type": "active",
+    "severity": "high",
+    "confidence": "tentative",
+    "description": "A file upload using the 'SVG with Embedded Script (Stored XSS via Upload)' technique was accepted and the payload was later retrievable/executable, indicating insufficient server-side file-type and content validation.",
+    "remediation": "Validate uploaded file content (not just extension/Content-Type) server-side, store uploads outside the web root with randomized names, and disable script execution in upload directories.",
+    "conditions": [
+      {
+        "payload": "<svg onload=alert('lawcybug-svg-xss')></svg>",
+        "match": "response_body",
+        "pattern": "onload=alert\\('lawcybug-svg-xss'\\)"
+      }
+    ]
+  },
+  {
+    "name": "Insecure File Upload - ZIP Path Traversal (Zip Slip)",
+    "type": "active",
+    "severity": "high",
+    "confidence": "tentative",
+    "description": "A file upload using the 'ZIP Path Traversal (Zip Slip)' technique was accepted and the payload was later retrievable/executable, indicating insufficient server-side file-type and content validation.",
+    "remediation": "Validate uploaded file content (not just extension/Content-Type) server-side, store uploads outside the web root with randomized names, and disable script execution in upload directories.",
+    "conditions": [
+      {
+        "payload": "../../../../tmp/lawcybug-zipslip-test",
+        "match": "response_body",
+        "pattern": "(?i)lawcybug-zipslip-test"
+      }
+    ]
+  },
+  {
+    "name": "Prototype Pollution via __proto__ JSON Key",
+    "type": "active",
+    "severity": "high",
+    "confidence": "tentative",
+    "description": "A JSON body containing a __proto__ key with a polluting value caused observable behavior change (e.g. reflected property on unrelated objects), indicating unsafe recursive merge/clone of user input pollutes Object.prototype \u2014 exploitable for DoS, auth bypass, or in some stacks RCE.",
+    "remediation": "Use merge/clone libraries that explicitly block __proto__/constructor/prototype keys, or parse JSON with Object.create(null) prototypes; upgrade vulnerable lodash/jQuery/minimist versions.",
+    "conditions": [
+      {
+        "payload": "{\"__proto__\":{\"lawcybugPolluted\":true}}",
+        "match": "response_body",
+        "pattern": "lawcybugPolluted"
+      }
+    ]
+  },
+  {
+    "name": "Prototype Pollution via constructor.prototype JSON Key",
+    "type": "active",
+    "severity": "high",
+    "confidence": "tentative",
+    "description": "A JSON body using the constructor.prototype path to pollute the base object prototype produced an observable side effect in the response, confirming an alternate prototype-pollution gadget chain beyond direct __proto__ filtering.",
+    "remediation": "Block constructor/prototype/__proto__ keys at the deepest level of any recursive merge utility, not just the top level.",
+    "conditions": [
+      {
+        "payload": "{\"constructor\":{\"prototype\":{\"lawcybugPolluted2\":true}}}",
+        "match": "response_body",
+        "pattern": "lawcybugPolluted2"
+      }
+    ]
+  },
+  {
+    "name": "Web Cache Poisoning via X-Forwarded-Host",
+    "type": "active",
+    "severity": "high",
+    "confidence": "tentative",
+    "description": "Injecting a forged X-Forwarded-Host header caused that value to be reflected into a cacheable response (e.g. a generated absolute link), which a CDN/cache could then serve to other users \u2014 enabling cache poisoning at scale.",
+    "remediation": "Exclude unkeyed headers like X-Forwarded-Host from influencing cacheable response content, or include them in the cache key; validate the header against an allow-list.",
+    "conditions": [
+      {
+        "payload": "X-Forwarded-Host: lawcybug-cache-poison-test.example.com",
+        "match": "response_body",
+        "pattern": "lawcybug-cache-poison-test\\.example\\.com"
+      }
+    ]
+  },
+  {
+    "name": "Web Cache Deception - Sensitive Page Cached via Fake Static Extension",
+    "type": "active",
+    "severity": "medium",
+    "confidence": "tentative",
+    "description": "Appending a static-resource-like extension (e.g. /account/profile/nonexistent.css) to a sensitive authenticated page returned the sensitive content with cache-friendly headers, meaning a shared cache could store and later serve another user's private page.",
+    "remediation": "Configure the cache layer to key on the full path/extension correctly and never cache responses containing Set-Cookie or Vary: Cookie content based on path-extension heuristics alone.",
+    "conditions": [
+      {
+        "payload": "/account/profile/nonexistent.css",
+        "match": "response_header",
+        "pattern": "(?i)Cache-Control:\\s*(public|max-age=[1-9])"
+      }
+    ]
+  },
+  {
+    "name": "Deprecated/Unversioned API Path Still Reachable",
+    "type": "passive",
+    "severity": "low",
+    "confidence": "tentative",
+    "description": "A response was served from a legacy/unversioned API path (e.g. /api/v1/ alongside a current /api/v3/), which often receives less security review and weaker authorization enforcement than the current version.",
+    "remediation": "Retire deprecated API versions entirely rather than leaving them reachable, or apply identical authorization middleware to all active versions.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)\\\"api_version\\\"\\s*:\\s*\\\"v?1\\\""
+      }
+    ]
+  },
+  {
+    "name": "Object-Level Authorization Hint - Resource Owner ID Mismatch in Response",
+    "type": "passive",
+    "severity": "medium",
+    "confidence": "tentative",
+    "description": "The response includes both a resource's owner_id/user_id field and what appears to be the requesting session's own identifier in proximity, with mismatched values \u2014 a strong indicator that object-level authorization (BOLA) was not enforced for this resource. Confirm by replaying as the owning user.",
+    "remediation": "Enforce object-level authorization on every resource-returning endpoint: verify the authenticated principal owns or is permitted to access the specific object ID requested, not just that they are authenticated.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)\\\"owner_id\\\"\\s*:\\s*\\\"?\\d+\\\"?[\\s\\S]{0,150}\\\"requested_by\\\"\\s*:\\s*\\\"?\\d+\\\"?"
+      }
+    ]
+  },
+  {
+    "name": "Sensitive Action Page Frameable (Clickjacking)",
+    "type": "passive",
+    "severity": "medium",
+    "confidence": "tentative",
+    "description": "A page that appears to perform a sensitive state-changing action (form with submit-type inputs) was served without X-Frame-Options or a frame-ancestors CSP directive, leaving it embeddable in an attacker's iframe for clickjacking.",
+    "remediation": "Send X-Frame-Options: DENY or a frame-ancestors 'none'/'self' CSP directive on all pages that trigger state-changing actions.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)<form[^>]*>[\\s\\S]{0,500}<input[^>]*type=[\\\"']?(submit|password)"
+      }
+    ]
+  },
+  {
+    "name": "Subdomain Takeover Indicator - GitHub Pages",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "tentative",
+    "description": "A response consistent with an unclaimed GitHub Pages resource was returned for this hostname, indicating a dangling DNS record (CNAME) pointing to a deprovisioned GitHub Pages resource that an attacker could claim and use for phishing/session theft under your domain.",
+    "remediation": "Remove the dangling DNS record pointing to the deprovisioned GitHub Pages resource, or reclaim/reconfigure the resource immediately.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)There isn't a GitHub Pages site here"
+      }
+    ]
+  },
+  {
+    "name": "Subdomain Takeover Indicator - Heroku",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "tentative",
+    "description": "A response consistent with an unclaimed Heroku resource was returned for this hostname, indicating a dangling DNS record (CNAME) pointing to a deprovisioned Heroku resource that an attacker could claim and use for phishing/session theft under your domain.",
+    "remediation": "Remove the dangling DNS record pointing to the deprovisioned Heroku resource, or reclaim/reconfigure the resource immediately.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)No such app"
+      }
+    ]
+  },
+  {
+    "name": "Subdomain Takeover Indicator - AWS S3 Bucket",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "tentative",
+    "description": "A response consistent with an unclaimed AWS S3 Bucket resource was returned for this hostname, indicating a dangling DNS record (CNAME) pointing to a deprovisioned AWS S3 Bucket resource that an attacker could claim and use for phishing/session theft under your domain.",
+    "remediation": "Remove the dangling DNS record pointing to the deprovisioned AWS S3 Bucket resource, or reclaim/reconfigure the resource immediately.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)NoSuchBucket"
+      }
+    ]
+  },
+  {
+    "name": "Subdomain Takeover Indicator - Shopify",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "tentative",
+    "description": "A response consistent with an unclaimed Shopify resource was returned for this hostname, indicating a dangling DNS record (CNAME) pointing to a deprovisioned Shopify resource that an attacker could claim and use for phishing/session theft under your domain.",
+    "remediation": "Remove the dangling DNS record pointing to the deprovisioned Shopify resource, or reclaim/reconfigure the resource immediately.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)Sorry, this shop is currently unavailable"
+      }
+    ]
+  },
+  {
+    "name": "Subdomain Takeover Indicator - Fastly",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "tentative",
+    "description": "A response consistent with an unclaimed Fastly resource was returned for this hostname, indicating a dangling DNS record (CNAME) pointing to a deprovisioned Fastly resource that an attacker could claim and use for phishing/session theft under your domain.",
+    "remediation": "Remove the dangling DNS record pointing to the deprovisioned Fastly resource, or reclaim/reconfigure the resource immediately.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)Fastly error: unknown domain"
+      }
+    ]
+  },
+  {
+    "name": "Subdomain Takeover Indicator - Azure",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "tentative",
+    "description": "A response consistent with an unclaimed Azure resource was returned for this hostname, indicating a dangling DNS record (CNAME) pointing to a deprovisioned Azure resource that an attacker could claim and use for phishing/session theft under your domain.",
+    "remediation": "Remove the dangling DNS record pointing to the deprovisioned Azure resource, or reclaim/reconfigure the resource immediately.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)404 Web Site not found"
+      }
+    ]
+  },
+  {
+    "name": "Subdomain Takeover Indicator - Unbounce",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "tentative",
+    "description": "A response consistent with an unclaimed Unbounce resource was returned for this hostname, indicating a dangling DNS record (CNAME) pointing to a deprovisioned Unbounce resource that an attacker could claim and use for phishing/session theft under your domain.",
+    "remediation": "Remove the dangling DNS record pointing to the deprovisioned Unbounce resource, or reclaim/reconfigure the resource immediately.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)The requested URL was not found on this server"
+      }
+    ]
+  }
+]

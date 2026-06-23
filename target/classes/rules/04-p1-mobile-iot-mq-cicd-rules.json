@@ -1,0 +1,507 @@
+[
+  {
+    "name": "Mobile Backend - Firebase Cloud Messaging Server Key Usable for Push Spoofing",
+    "type": "active",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "A leaked FCM server key (found elsewhere in this scan) was usable to send a push notification via the FCM legacy HTTP API, confirming an attacker can send arbitrary spoofed push notifications to all of the app's installed devices.",
+    "remediation": "Rotate the FCM server key immediately, migrate to the v1 API with OAuth2/service-account auth, and never embed the legacy server key in any client-reachable response.",
+    "conditions": [
+      {
+        "payload": "{\"to\":\"/topics/all\",\"notification\":{\"title\":\"lawcybug-push-test\"}}",
+        "match": "response_body",
+        "pattern": "\\\"message_id\\\""
+      }
+    ]
+  },
+  {
+    "name": "Mobile Backend - Hardcoded API Base URL Reveals Internal/Staging Host",
+    "type": "passive",
+    "severity": "low",
+    "confidence": "tentative",
+    "description": "A response (or decompiled app artifact served from this backend) discloses an internal or staging API base URL distinct from the production domain, which may have weaker security controls than production.",
+    "remediation": "Audit the staging/internal API host for the same authentication and rate-limiting controls as production, or restrict it to a VPN-only network.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)https?://(api[-.]?(staging|dev|internal|test)[\\w.-]*|internal-api[\\w.-]*)\\.[\\w.-]+"
+      }
+    ]
+  },
+  {
+    "name": "Mobile Backend - Refresh Token Returned With Excessive Lifetime/No Rotation",
+    "type": "passive",
+    "severity": "medium",
+    "confidence": "tentative",
+    "description": "A token-issuance response includes a refresh token alongside an expires_in value implying a very long lifetime (e.g. >90 days) with no indication of single-use rotation, increasing the impact window if the token is exfiltrated from a lost/compromised device.",
+    "remediation": "Issue refresh tokens with reasonable expiry, rotate them on every use (refresh token rotation), and support server-side revocation tied to device/session identifiers.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "\\\"refresh_token\\\"\\s*:\\s*\\\"[^\\\"]+\\\"[\\s\\S]{0,150}\\\"expires_in\\\"\\s*:\\s*([7-9]\\d{6,}|\\d{8,})"
+      }
+    ]
+  },
+  {
+    "name": "Mobile Backend - Device/Push Token Enumerable via Sequential User ID",
+    "type": "passive",
+    "severity": "medium",
+    "confidence": "tentative",
+    "description": "A user-profile endpoint returns the device's push notification token (FCM/APNs) alongside a small sequential user ID, suggesting push tokens for other users could be harvested via ID enumeration if object-level authorization is also weak \u2014 enabling targeted push-phishing.",
+    "remediation": "Never include push tokens in any API response readable by another user; scope push-token storage to server-side-only fields never serialized to API responses.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)\\\"(fcm_token|push_token|device_token|apns_token)\\\"\\s*:\\s*\\\"[\\w:_-]{20,}\\\""
+      }
+    ]
+  },
+  {
+    "name": "Mobile Backend - API Key Embedded in Mobile-Specific Header Without Per-Device Scoping",
+    "type": "passive",
+    "severity": "medium",
+    "confidence": "tentative",
+    "description": "A static API key value is sent via a custom mobile-app header (e.g. X-App-Key) identical across requests/devices, meaning compromise of one extracted client binary key compromises the trust boundary for every installed copy of the app.",
+    "remediation": "Use per-device or per-session derived credentials (e.g. obtained via an authenticated handshake) rather than a single static key baked into every app binary.",
+    "conditions": [
+      {
+        "target": "request_header",
+        "pattern": "(?i)^X-App-Key:\\s*[\\w-]{16,}$"
+      }
+    ]
+  },
+  {
+    "name": "Mobile Backend - Certificate Pinning Bypass Indicator (Debug Build Header)",
+    "type": "passive",
+    "severity": "low",
+    "confidence": "tentative",
+    "description": "A response includes a debug/build header (e.g. X-Debug-Build: true) on what appears to be a production API host, suggesting a debug build\u2014commonly shipped without certificate pinning or with verbose logging\u2014may be reachable against the live backend.",
+    "remediation": "Ensure only release builds (with pinning and logging disabled) can authenticate against the production backend; reject requests bearing debug-build client identifiers in production.",
+    "conditions": [
+      {
+        "target": "response_header",
+        "pattern": "(?i)^X-Debug-Build:\\s*true"
+      }
+    ]
+  },
+  {
+    "name": "Mobile Backend - Insecure Direct Object Reference via Internal Database ID in Deep Link",
+    "type": "passive",
+    "severity": "medium",
+    "confidence": "tentative",
+    "description": "A generated deep-link/universal-link URL embeds a raw internal database ID for a user-owned resource (e.g. myapp://order/4821), which combined with weak server-side authorization allows IDOR by simply changing the number in a shared/forwarded link.",
+    "remediation": "Use non-sequential, capability-scoped tokens (signed, short-lived) in deep links rather than raw object IDs, and still enforce object-level authorization server-side on link resolution.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)\\w+://(order|profile|invoice|account)/\\d{1,8}\\b"
+      }
+    ]
+  },
+  {
+    "name": "Mobile Backend - GraphQL Persisted Query Hash Allows Arbitrary Query Override",
+    "type": "active",
+    "severity": "medium",
+    "confidence": "tentative",
+    "description": "Submitting a custom 'query' string alongside a persisted-query 'extensions.persistedQuery' hash was accepted and executed the supplied query rather than rejecting the mismatch, defeating the purpose of persisted queries (which exist to restrict clients to an approved query allow-list).",
+    "remediation": "Reject any request that supplies both a query string and a persistedQuery hash unless they match exactly; enforce persisted-query-only mode in production for mobile clients.",
+    "conditions": [
+      {
+        "payload": "{\"extensions\":{\"persistedQuery\":{\"sha256Hash\":\"0000000000000000000000000000000000000000000000000000000000000\"}},\"query\":\"{__typename}\"}",
+        "match": "status",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "name": "Mobile Backend - App Attestation/Integrity Check Bypassed by Missing Server-Side Verification",
+    "type": "passive",
+    "severity": "medium",
+    "confidence": "tentative",
+    "description": "A sensitive endpoint accepts a client-supplied attestation/integrity token (e.g. SafetyNet/Play Integrity, DeviceCheck) field but the response provides no indication the server actually calls Google/Apple's verification API, suggesting integrity checks may be enforced only client-side and trivially bypassable.",
+    "remediation": "Always verify attestation tokens server-side against the platform vendor's verification API before trusting any device-integrity claim; never rely on client-reported integrity status alone.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)\\\"(integrityVerdict|attestationResult)\\\"\\s*:\\s*\\\"(MEETS_DEVICE_INTEGRITY|valid)\\\""
+      }
+    ]
+  },
+  {
+    "name": "IoT - Default Telnet/HTTP Credentials Accepted (admin/admin, root/admin)",
+    "type": "active",
+    "severity": "high",
+    "confidence": "tentative",
+    "description": "The device's web management interface accepted a common factory-default credential pair, confirming credentials were never changed since provisioning \u2014 a leading cause of large-scale IoT botnet recruitment (e.g. Mirai-class).",
+    "remediation": "Force a mandatory unique-password change on first boot, disable default accounts entirely, and ship devices with no universal default credential.",
+    "conditions": [
+      {
+        "payload": "username=admin&password=admin",
+        "match": "status",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "name": "IoT - UPnP/SSDP Service Reachable From WAN Side",
+    "type": "active",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "A UPnP discovery/description request succeeded against what should be a LAN-only service, indicating the device's UPnP daemon (commonly vulnerable, e.g. miniupnpd CVEs) is reachable from the internet \u2014 enabling port-mapping abuse and direct exploitation.",
+    "remediation": "Disable UPnP on the WAN interface entirely; restrict the UPnP daemon to bind only to LAN-side interfaces.",
+    "conditions": [
+      {
+        "payload": "M-SEARCH * HTTP/1.1\r\nMAN: \"ssdp:discover\"\r\nMX: 1\r\nST: ssdp:all\r\n\r\n",
+        "match": "response_body",
+        "pattern": "(?i)SERVER:.*?UPnP"
+      }
+    ]
+  },
+  {
+    "name": "IoT - MQTT Broker Reachable Without Authentication",
+    "type": "active",
+    "severity": "high",
+    "confidence": "certain",
+    "description": "A CONNECT packet without credentials was accepted by the MQTT broker, and a subsequent SUBSCRIBE to a wildcard topic (#) returned live device telemetry/command messages, confirming the broker permits anonymous access to all topics.",
+    "remediation": "Require username/password or client-certificate authentication on the MQTT broker, disable anonymous access, and apply per-client ACLs restricting topic access (no wildcard subscribe for unauthenticated/low-trust clients).",
+    "conditions": [
+      {
+        "payload": "CONNECT (anonymous) then SUBSCRIBE #",
+        "match": "status",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "name": "IoT - CoAP Service Reachable and Responds to Unauthenticated GET /.well-known/core",
+    "type": "active",
+    "severity": "medium",
+    "confidence": "firm",
+    "description": "An unauthenticated CoAP discovery request returned the device's full resource directory, enumerating all available endpoints/sensors/actuators without any access control.",
+    "remediation": "Require DTLS-based authentication (CoAPs) for CoAP endpoints and avoid exposing the resource directory to untrusted networks.",
+    "conditions": [
+      {
+        "payload": "GET /.well-known/core",
+        "match": "response_body",
+        "pattern": "</\\w+>;rt=\\\""
+      }
+    ]
+  },
+  {
+    "name": "IoT - RTSP Camera Stream Reachable Without Authentication",
+    "type": "active",
+    "severity": "high",
+    "confidence": "certain",
+    "description": "An RTSP DESCRIBE request against the camera stream succeeded without credentials, confirming live video feed access requires no authentication \u2014 a frequent cause of mass camera-feed leaks indexed by IoT search engines.",
+    "remediation": "Require authentication (digest auth at minimum) on all RTSP streams and disable any anonymous-access fallback mode in the camera firmware.",
+    "conditions": [
+      {
+        "payload": "DESCRIBE rtsp://target/stream1 RTSP/1.0",
+        "match": "status",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "name": "IoT - Firmware Update Endpoint Lacks Signature Verification Indicator",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "tentative",
+    "description": "The firmware update/check-for-update response provides a raw download URL and version string with no accompanying signature, hash-with-trusted-key, or HTTPS-only indicator, suggesting firmware images may not be cryptographically verified before flashing \u2014 enabling malicious firmware injection via MITM or compromised update server.",
+    "remediation": "Sign firmware images with a vendor private key, verify the signature on-device before flashing, and serve update metadata/binaries exclusively over HTTPS with certificate pinning.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)\\\"firmware_url\\\"\\s*:\\s*\\\"http://[^\\\"]+\\\"[\\s\\S]{0,100}(?!\\\"signature\\\")(?!\\\"sha256\\\")"
+      }
+    ]
+  },
+  {
+    "name": "IoT - Modbus/TCP Industrial Protocol Reachable Without Authentication",
+    "type": "active",
+    "severity": "high",
+    "confidence": "certain",
+    "description": "A Modbus/TCP read-holding-registers request succeeded against the exposed industrial control port without any authentication, confirming an attacker can read (and via write function codes, manipulate) PLC/SCADA register values directly from the network.",
+    "remediation": "Modbus/TCP has no native authentication \u2014 isolate all ICS/SCADA traffic on a segmented network with no direct internet reachability, and place an authenticated gateway/firewall in front of any remote access requirement.",
+    "conditions": [
+      {
+        "payload": "Modbus Read Holding Registers (function code 0x03)",
+        "match": "status",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "name": "IoT - BACnet Building Automation Service Reachable From WAN",
+    "type": "active",
+    "severity": "medium",
+    "confidence": "firm",
+    "description": "A BACnet 'Who-Is' discovery request received responses from building automation devices reachable directly from outside the local network, exposing HVAC/access-control/lighting systems to remote manipulation.",
+    "remediation": "Segment BACnet/IP traffic onto an isolated VLAN with no WAN routing, and require a VPN for any legitimate remote building-management access.",
+    "conditions": [
+      {
+        "payload": "BACnet Who-Is broadcast",
+        "match": "response_body",
+        "pattern": "(?i)I-Am"
+      }
+    ]
+  },
+  {
+    "name": "IoT - Hardcoded Vendor Backdoor Credentials in Web Interface",
+    "type": "active",
+    "severity": "high",
+    "confidence": "tentative",
+    "description": "A vendor-specific undocumented credential pair (commonly disclosed via firmware reverse engineering, e.g. 'support'/vendor-derived password schemes) was accepted on the device web interface, indicating a manufacturer backdoor account exists outside the normal admin account.",
+    "remediation": "Remove all undocumented/hardcoded accounts from firmware before shipping; if a support-access mechanism is required, use a time-limited, cryptographically-derived one-time credential instead of a static backdoor.",
+    "conditions": [
+      {
+        "payload": "username=support&password=lawcybug-vendor-backdoor-test",
+        "match": "status",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "name": "IoT - Device Local API Exposes WiFi Credentials in Plaintext",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "A device status/configuration endpoint returns the configured WiFi SSID and pre-shared key in plaintext within the JSON response, exposing the entire local network's WiFi credentials to anyone who can reach this single endpoint.",
+    "remediation": "Never return WiFi PSK/passwords in any API response after initial provisioning; store them write-only or encrypted at rest with no API read path.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)\\\"(wifi_password|psk|ssid_password)\\\"\\s*:\\s*\\\"[^\\\"]{6,}\\\""
+      }
+    ]
+  },
+  {
+    "name": "Message Queue - Apache Kafka Broker Reachable Without SASL/TLS",
+    "type": "active",
+    "severity": "high",
+    "confidence": "certain",
+    "description": "A Metadata request against the Kafka broker's plaintext listener succeeded without authentication, returning topic/partition metadata and confirming the broker permits unauthenticated produce/consume on all topics.",
+    "remediation": "Enable SASL (SCRAM or Kerberos) authentication and TLS on all Kafka listeners, and apply ACLs restricting topic-level produce/consume permissions per authenticated principal.",
+    "conditions": [
+      {
+        "payload": "Kafka Metadata Request (API key 3)",
+        "match": "response_body",
+        "pattern": "(?i)topics?_metadata|controller_id"
+      }
+    ]
+  },
+  {
+    "name": "Message Queue - RabbitMQ AMQP Port Reachable Without Authentication (Anonymous Mechanism)",
+    "type": "active",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "An AMQP connection using the ANONYMOUS SASL mechanism was accepted by the broker, allowing message publish/consume on exchanges without any real credential.",
+    "remediation": "Disable the ANONYMOUS auth mechanism in RabbitMQ configuration and require PLAIN/AMQPLAIN with valid, non-default credentials over TLS.",
+    "conditions": [
+      {
+        "payload": "AMQP CONNECT with SASL ANONYMOUS",
+        "match": "status",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "name": "Message Queue - ActiveMQ OpenWire/Jolokia RCE Signature (CVE-2023-46604 class)",
+    "type": "active",
+    "severity": "high",
+    "confidence": "certain",
+    "description": "A crafted OpenWire packet referencing an attacker-controlled class via Spring's ClassPathXmlApplicationContext caused remote code execution evidence in the response, consistent with the ActiveMQ OpenWire deserialization RCE vulnerability class.",
+    "remediation": "Upgrade ActiveMQ to a patched version immediately; restrict the OpenWire port (61616) to trusted internal clients only and disable Jolokia/management consoles from public exposure.",
+    "conditions": [
+      {
+        "payload": "OpenWire ExceptionResponse with embedded ClassPathXmlApplicationContext gadget",
+        "match": "response_body",
+        "pattern": "lawcybug-activemq-rce-test"
+      }
+    ]
+  },
+  {
+    "name": "Message Queue - Redis Used as Queue Without ACL Restricts Job Tampering",
+    "type": "active",
+    "severity": "medium",
+    "confidence": "tentative",
+    "description": "Sending an unauthenticated LPUSH to a job-queue key (commonly used by frameworks like Sidekiq/Bull/Celery-with-redis-broker) succeeded, allowing arbitrary job payload injection which can lead to deserialization RCE depending on the worker's job format.",
+    "remediation": "Require Redis authentication/ACLs scoping queue-key access to the application's own credentials, and validate/sign job payloads before a worker processes them.",
+    "conditions": [
+      {
+        "payload": "LPUSH lawcybug-queue-test '{\"job\":\"test\"}'",
+        "match": "status",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "name": "Message Queue - NATS Server Reachable Without Authentication",
+    "type": "active",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "A CONNECT to the NATS server without an auth_token/credentials succeeded, and a subsequent wildcard SUBSCRIBE (>) returned live messages from other publishers on the same server, exposing inter-service communication.",
+    "remediation": "Enable NATS authentication (token, TLS client certs, or NATS accounts/JWT) and avoid wildcard-subscribable shared subjects across trust boundaries.",
+    "conditions": [
+      {
+        "payload": "CONNECT {} then SUB > 1",
+        "match": "status",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "name": "Message Queue - AWS SQS Queue Policy Allows Public Access (Principal: *)",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "The retrieved SQS queue policy document contains a statement with Principal set to '*' and Effect 'Allow', meaning any AWS account (or, if combined with NotPrincipal misuse, literally anyone) can send/receive/delete messages on this queue.",
+    "remediation": "Scope the queue policy Principal to specific account ARNs/roles only, and apply the AWS-managed 'block public access' guardrails at the organization level for SQS.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "\\\"Principal\\\"\\s*:\\s*\\\"\\\\*\\\"[\\s\\S]{0,150}\\\"Effect\\\"\\s*:\\s*\\\"Allow\\\""
+      }
+    ]
+  },
+  {
+    "name": "Message Queue - RPC-over-Queue Deserializes Job Payload Without Schema Validation",
+    "type": "passive",
+    "severity": "medium",
+    "confidence": "tentative",
+    "description": "Worker source/log output shows a job payload being deserialized via a native/insecure mechanism (pickle.loads, Marshal.load, unserialize) rather than a schema-validated format, meaning any actor able to enqueue a message (including via an open queue misconfiguration elsewhere) gains code execution in the worker.",
+    "remediation": "Use a schema-validated serialization format (JSON with strict schema validation) for all queue payloads; never deserialize queue messages with a native object-deserialization function.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)(pickle\\.loads|Marshal\\.load|unserialize)\\s*\\(\\s*(message|payload|job)"
+      }
+    ]
+  },
+  {
+    "name": "CI/CD - GitHub Actions Workflow Vulnerable to Script Injection via Untrusted Input",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "A workflow YAML file directly interpolates an untrusted context value (e.g. ${{ github.event.issue.title }} or pull_request title/body) into a 'run:' shell step rather than passing it through an environment variable, allowing arbitrary shell command injection from a malicious PR/issue title.",
+    "remediation": "Never interpolate untrusted GitHub context values directly into run: steps; pass them through env: variables instead, which are not subject to shell expansion of the raw string.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)run:\\s*\\|?[\\s\\S]{0,80}\\$\\{\\{\\s*github\\.event\\.(issue|pull_request)\\.(title|body)"
+      }
+    ]
+  },
+  {
+    "name": "CI/CD - GitHub Actions pull_request_target Used With Checkout of Fork Code",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "A workflow triggers on pull_request_target (which runs with base-repo secrets/permissions) and also checks out the head ref of the incoming fork PR, allowing an external contributor's code to execute with access to repository secrets \u2014 a critical supply-chain risk (CVE-class 'pwn request').",
+    "remediation": "Avoid checking out untrusted fork code under pull_request_target; if required, run the untrusted portion in a separate job with no secrets access, gated behind manual approval for first-time contributors.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)pull_request_target[\\s\\S]{0,300}ref:\\s*\\$\\{\\{\\s*github\\.event\\.pull_request\\.head"
+      }
+    ]
+  },
+  {
+    "name": "CI/CD - Self-Hosted Runner Reused Across Public Repository Forks",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "tentative",
+    "description": "A public repository's workflow configuration targets a self-hosted runner label, meaning any contributor able to open a PR that triggers CI could potentially execute code on persistent, possibly network-privileged infrastructure.",
+    "remediation": "Never use self-hosted runners for public repositories without ephemeral, fully isolated runner instances per job; prefer GitHub-hosted runners for any public-facing project.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)runs-on:\\s*\\[?self-hosted"
+      }
+    ]
+  },
+  {
+    "name": "CI/CD - Jenkinsfile Credentials Binding Printed via 'sh' Debug Output",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "A Jenkinsfile pipeline definition uses the withCredentials block but also enables shell 'set -x'/echo debug output in the same stage, which would print the bound credential's plaintext value into the build console log.",
+    "remediation": "Never enable shell command tracing (set -x) within any stage that has bound credentials; Jenkins masks literal credential matches but cannot mask values that have been transformed (e.g. base64-encoded) before printing.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)withCredentials\\([\\s\\S]{0,200}set -x"
+      }
+    ]
+  },
+  {
+    "name": "CI/CD - GitLab CI Variable Exposed via 'rules' Misconfiguration Allows Cross-Project Leak",
+    "type": "passive",
+    "severity": "medium",
+    "confidence": "tentative",
+    "description": "A .gitlab-ci.yml configuration sets a protected/masked variable's scope without restricting the pipeline to protected branches/tags only, meaning the variable could be exposed by running the pipeline from an unprotected branch or merge request from a fork.",
+    "remediation": "Mark CI/CD variables as both 'Protected' and 'Masked', and restrict pipelines that use sensitive variables to protected branches only via job-level rules.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)variables:\\s*\\n\\s*\\w*(TOKEN|SECRET|KEY)\\w*:[\\s\\S]{0,200}(?!protected)"
+      }
+    ]
+  },
+  {
+    "name": "CI/CD - CircleCI Config Exposes Context Without Restricting Branch",
+    "type": "passive",
+    "severity": "medium",
+    "confidence": "tentative",
+    "description": "A CircleCI config.yml references a secrets-bearing 'context' on a job triggered for all branches, including those that may be created by external/fork contributors on a public repository.",
+    "remediation": "Restrict the use of secret-bearing contexts to protected branches/workflows only, and require approval gating for any workflow run from a forked pull request before secrets-bearing jobs execute.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)context:\\s*[\\w-]*(secret|prod|deploy)[\\w-]*[\\s\\S]{0,150}(?!filters:)"
+      }
+    ]
+  },
+  {
+    "name": "CI/CD - npm/PyPI Package Postinstall Script Exfiltrates Environment Variables",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "A package's install script (preinstall/postinstall in package.json, or setup.py) contains code that reads process.env / os.environ and sends it to an external network endpoint, a known supply-chain attack pattern for harvesting CI secrets during dependency installation.",
+    "remediation": "Audit all dependency install scripts before adding them (or use --ignore-scripts in CI by default), and run dependency installation in a network-restricted sandbox without access to CI secret environment variables.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)(process\\.env|os\\.environ)[\\s\\S]{0,150}(fetch\\(|requests\\.(post|get)\\(|https?://)"
+      }
+    ]
+  },
+  {
+    "name": "CI/CD - Build Artifact Bucket Publicly Readable Exposes Compiled Secrets",
+    "type": "passive",
+    "severity": "high",
+    "confidence": "firm",
+    "description": "A CI build artifact (e.g. a compiled binary, .env-baked frontend bundle, or container layer) is publicly downloadable from the artifact storage bucket, and inspection reveals embedded secrets baked in at build time.",
+    "remediation": "Treat build-time embedded values as public always; never bake real secrets into client-distributable artifacts. Restrict artifact bucket access to the deploy pipeline's identity only.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)(REACT_APP_|VITE_|NEXT_PUBLIC_)\\w*(SECRET|KEY|TOKEN)\\w*\\s*[:=]\\s*['\\\"][^'\\\"]{10,}"
+      }
+    ]
+  },
+  {
+    "name": "CI/CD - Dependency Confusion Risk via Internal Package Name Without Scoped Registry",
+    "type": "passive",
+    "severity": "medium",
+    "confidence": "tentative",
+    "description": "A package.json/requirements.txt references an internal-sounding package name (e.g. matching the company name) without a scoped registry prefix or private-registry pin, meaning an attacker could publish a same-named malicious package to the public registry and have it installed instead (dependency confusion).",
+    "remediation": "Use scoped package names (@yourorg/package) for all internal packages, and configure the package manager to pin internal scopes exclusively to your private registry.",
+    "conditions": [
+      {
+        "target": "response_body",
+        "pattern": "(?i)\\\"(internal-|corp-|company-)[\\w-]+\\\"\\s*:\\s*\\\"\\^?[\\d.]+\\\""
+      }
+    ]
+  }
+]
