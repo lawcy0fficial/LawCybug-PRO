@@ -1,928 +1,932 @@
 <div align="center">
 
-```
-╔══════════════════════════════════════════════════════════════════════════════╗
-║                                                                              ║
-║    ██╗      █████╗ ██╗    ██╗ ██████╗██╗   ██╗██████╗ ██╗   ██╗ ██████╗   ║
-║    ██║     ██╔══██╗██║    ██║██╔════╝╚██╗ ██╔╝██╔══██╗██║   ██║██╔════╝   ║
-║    ██║     ███████║██║ █╗ ██║██║      ╚████╔╝ ██████╔╝██║   ██║██║  ███╗  ║
-║    ██║     ██╔══██║██║███╗██║██║       ╚██╔╝  ██╔══██╗██║   ██║██║   ██║  ║
-║    ███████╗██║  ██║╚███╔███╔╝╚██████╗   ██║   ██████╔╝╚██████╔╝╚██████╔╝  ║
-║    ╚══════╝╚═╝  ╚═╝ ╚══╝╚══╝  ╚═════╝   ╚═╝   ╚═════╝  ╚═════╝  ╚═════╝  ║
-║                                                                              ║
-║                  ·  P  R  O  ·  v  0  .  1  .  0  -    ·     ║
-║                                                                              ║
-╚══════════════════════════════════════════════════════════════════════════════╝
-```
+<img src="svg/banner-hero.svg" alt="LawCyBUG.pro banner"/>
 
-# 🕷️ The Bug Hunter's Weapon of Choice 🕷️
+# 🕷️ LawCyBug.pro — Architecture &amp; Feature Deep-Dive
 
-### *"Others scan. You hunt."*
-
-<br>
-
-[![Version](https://img.shields.io/badge/⚡_VERSION-v0.2.0--tier1-00ff88?style=for-the-badge)](.)
-[![API](https://img.shields.io/badge/🔥_MONTOYA_API-2026.4-ff6b35?style=for-the-badge)](.)
-[![JDK](https://img.shields.io/badge/☕_JDK-17%2B-4ecdc4?style=for-the-badge)](.)
-[![Build](https://img.shields.io/badge/🔨_BUILD-Maven-c0392b?style=for-the-badge)](.)
-[![Rules](https://img.shields.io/badge/📜_RULES-287_Bundled-9b59b6?style=for-the-badge)](.)
-[![Detectors](https://img.shields.io/badge/🎯_DETECTORS-16_Active_·_7_Passive-e74c3c?style=for-the-badge)](.)
-[![Lines](https://img.shields.io/badge/💀_SOURCE-~3500_Lines_of_Java-2c3e50?style=for-the-badge)](.)
-[![Engine](https://img.shields.io/badge/🧠_ENGINE-LawcyCore_2.0-8e44ad?style=for-the-badge)](.)
-[![Scanner](https://img.shields.io/badge/🔍_SCANNER-Hybrid_Analysis-3498db?style=for-the-badge)](.)
-[![Payloads](https://img.shields.io/badge/💣_PAYLOADS-15K%2B-c0392b?style=for-the-badge)](.)
-[![Matchers](https://img.shields.io/badge/🎯_MATCHERS-42_Advanced-16a085?style=for-the-badge)](.)
-[![AI](https://img.shields.io/badge/🤖_AI-Assisted_Detection-f39c12?style=for-the-badge)](.)
-[![Performance](https://img.shields.io/badge/⚡_PERFORMANCE-Async_Multi--Threaded-27ae60?style=for-the-badge)](.)
-[![Coverage](https://img.shields.io/badge/🛡️_COVERAGE-OWASP_Top_10-2980b9?style=for-the-badge)](.)
-[![Fuzzing](https://img.shields.io/badge/🧪_FUZZING-Smart_Mutation-e67e22?style=for-the-badge)](.)
-[![Reporting](https://img.shields.io/badge/📊_REPORTING-JSON_·_HTML_·_CSV-34495e?style=for-the-badge)](.)
-[![Severity](https://img.shields.io/badge/🚨_SEVERITY-Critical_Focused-e74c3c?style=for-the-badge)](.)
-
-
-<br>
-
-> 🩸 *Built for authorized security testing & bug bounty programs only* 🩸
+[← back to README](../README.md)
 
 </div>
 
-<br>
+---
+
+## 📚 Table of Contents
+
+- [Architecture](#-architecture)
+- [Layer 1 — Core Detector Engine](#-layer-1--core-detector-engine)
+- [Layer 2 — Classic Payload Detectors](#-layer-2--classic-payload-detectors)
+- [Layer 3 — Workflow Engine](#-layer-3--workflow-engine)
+- [Layer 4 — Cross-Identity & Chain Detectors](#-layer-4--cross-identity--chain-detectors)
+- [Layer 5 — AI-Assisted Features](#-layer-5--ai-assisted-features-all-opt-in)
+- [Layer 6 — Autonomous Orchestrator](#-layer-6--autonomous-exploit-orchestrator)
+- [Custom Rules Engine](#-custom-rules-engine)
+- [Confidence System](#-confidence-system)
+- [Safe Mode — Why It Exists](#️-safe-mode--why-it-exists)
+- [Identities & Setup](#-identities--cross-identity-setup)
+- [UI Tour](#-ui-tour)
+- [Findings Export](#-findings-export)
+- [History, Audit & Suppression](#-history-audit--suppression)
+- [Configuration Reference](#-configuration-reference)
+- [Project Layout](#-project-layout)
+- [Step-by-Step: How a Scan Runs](#-step-by-step-how-a-scan-actually-runs)
+- [Detector Package Census](#-detector-package-census)
+- [Glossary](#-glossary)
+- [Troubleshooting](#-troubleshooting)
+- [Roadmap](#-roadmap)
+- [Version & Acknowledgments](#-version--acknowledgments)
 
 ---
 
-```
-  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
-  ░                                                                     ░
-  ░   Every vulnerability has a heartbeat. LawCyBug.pro finds it.      ░
-  ░                                                                     ░
-  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
-```
+## Architecture
+
+Every request Burp's Proxy/Scanner/Repeater sees is handed to the **`DetectorEngine`**, which fans it
+out to every registered `ActiveDetector` / `PassiveDetector` implementation. Detectors that need more
+than a single request/response pair — the ones behind BOLA, privilege escalation, business logic,
+account takeover — are instead built on top of the **`WorkflowEngine`**, which understands identities,
+learned object graphs, and can run a guarded multi-step request chain. Everything a detector produces
+becomes a `Finding`, normalized through `IssueFactory`, correlated by `FindingsCorrelator`, and
+stored in `FindingsStore`. The AI layer and the Autonomous Orchestrator sit *above* all of this — they
+read findings and (optionally) drive new requests through the same `WorkflowEngine` and `ChainGuard`
+machinery that the built-in detectors use, so the same Safe Mode / budget / throttling rules apply
+uniformly whether a request was fired by a hand-written detector or by the AI.
+
+<img src="svg/diagram-request-flow.svg" alt="request lifecycle"/>
+
+**Request lifecycle, step by step:**
+
+- **HTTP Request** — Burp hands the extension a request/response pair from Proxy, live Scanner, or a manual Repeater send (depending on which hooks are enabled in Settings).
+- **Passive Scan** — Every `PassiveDetector` inspects the pair with zero extra network traffic — header checks, information disclosure, JWT `alg:none`, passive object-graph learning for `ObjectGraph`.
+- **Active Probe** — `ActiveDetector` implementations that are enabled fire *additional*, purpose-built requests — a boolean-blind SQLi pair, an SSTI arithmetic payload, a Collaborator-backed SSRF probe — gated by Safe Mode where the probe mutates state.
+- **Evidence Check** — Raw signal (a error string, a timing delta, a Collaborator interaction) is run through category-specific validation in `ExploitEvidenceValidator` / `DifferentialProbeHelper` before it's allowed to become a finding at all.
+- **Finding** — A `Finding` is created via `IssueFactory`, given a Confidence rating, checked against `FindingsSuppressionEngine`, correlated against other findings on the same host by `FindingsCorrelator`, and persisted in `FindingsStore` — visible immediately in the LawCyBug tab.
 
 ---
 
-## 🌑 · W H A T · I S · T H I S · 🌑
-
-**LawCyBug.pro** is not a scanner. It is a *predator*.
-
-A hand-crafted, enterprise-grade **Burp Suite Professional extension** built on the Montoya API — forged from scratch in raw Java, with zero dependencies, zero compromises, and a single obsession: **confirmed findings, not noise**.
-
-While other tools throw generic payloads at walls and pray, LawCyBug.pro runs **three-way statistical diffing**, **out-of-band Collaborator callbacks**, **two-step chain verification**, and **cross-identity object graph replay** before it dares raise a single finding.
-
-This is not a wrapper. Not a GUI skin. Not a YAML rule importer with a logo.
-
-Every detector was written from first principles, for a single audience:
-
-> **The hunter who needs to be right.**
-
-<br>
-
-| 🎯 Pillar | ⚡ What It Means |
-|:---:|:---|
-| 🔬 **Confirmed over Noisy** | Statistical timing · 3-way response diff · OOB callbacks · chain verification |
-| 🕸️ **Modern Attack Surface** | GraphQL · OAuth 2.0/OIDC · BOLA · Race Conditions · Business Logic · Priv-Esc Chains |
-| 💀 **Zero False-Positive Tolerance** | Every HIGH/CRITICAL ships with exact evidence a bounty report needs |
-| 🧬 **Extensible Without Java** | 287 bundled JSON rules + write your own, live, no rebuild |
 
 ---
 
-## 🗺️ · T A B L E · O F · C O N T E N T S · 🗺️
+## 🧩 Layer 1 — Core Detector Engine
 
-```
-  ┌─────────────────────────────────────────────────────────────┐
-  │  01  ·  Architecture — The Blueprint                        │
-  │  02  ·  Active Detectors — The Hunters                      │
-  │  03  ·  Passive Detectors — The Watchers                    │
-  │  04  ·  Advanced Engine — The Brain                         │
-  │  05  ·  Custom Rule Engine — 287 Rules of Power             │
-  │  06  ·  Burp UI — The Command Center                        │
-  │  07  ·  Building & Loading — Forging the Weapon             │
-  │  08  ·  Setup & Configuration — Arming the Hunter           │
-  │  09  ·  Project Structure — The Anatomy                     │
-  │  10  ·  Ethical Use — The Code                              │
-  └─────────────────────────────────────────────────────────────┘
-```
+<img src="svg/icon-detectorengine.svg" alt="detector engine" width="64"/>
+<img src="svg/icon-active.svg" alt="active detector" width="64"/>
+<img src="svg/icon-passive.svg" alt="passive detector" width="64"/>
 
----
+Every detector implements one of two tiny interfaces:
 
-<br>
+| Interface | When it runs | Network traffic | Examples |
+|---|---|---|---|
+| `PassiveDetector` | On every request/response Burp already captured | None — inspects only | Security headers, info disclosure, JWT `alg:none` |
+| `ActiveDetector` | Opt-in, fires its own probes | Additional requests (Safe-Mode gated if mutating) | SQLi boolean/time-based, SSTI, SSRF Collaborator |
 
-## 🏛️ 01 · A R C H I T E C T U R E · — · T H E · B L U E P R I N T
+The `DetectorEngine` owns the registry of both, dispatches every observed pair to all *enabled*
+detectors, applies global rate-limiting/host-scoping from `RequestFingerprintGuard`, and forwards
+anything produced to `IssueFactory`. Two small but important support classes live at this layer:
 
-```
- ╔══════════════════════════════════════════════════════════════════════╗
- ║                    🔱  BURP SUITE PROFESSIONAL  🔱                  ║
- ║                                                                      ║
- ║   HTTP Traffic ──────────────────► LawCyBugExtension.java           ║
- ║                                           │                          ║
- ║                          ┌────────────────┼────────────────┐         ║
- ║                          ▼                ▼                ▼         ║
- ║                   ┌─────────────┐  ┌───────────┐  ┌──────────────┐ ║
- ║                   │ Detector    │  │ Findings  │  │   UI  Tab    │ ║
- ║                   │ Engine      │  │  Store    │  │  🖥️ Dashboard │ ║
- ║                   └──────┬──────┘  └─────┬─────┘  │  ⚙️ Settings  │ ║
- ║                          │               │        │  📝 Rules     │ ║
- ║              ┌───────────┴──────────┐    │        └──────────────┘ ║
- ║              ▼                      ▼    │                          ║
- ║      ┌──────────────┐    ┌────────────┐  │                          ║
- ║      │  🔴 ACTIVE   │    │ 🟡 PASSIVE │  │                          ║
- ║      │  Detectors   │    │ Detectors  │  │                          ║
- ║      │  (16 total)  │    │  (7 total) │  │                          ║
- ║      └──────┬───────┘    └─────┬──────┘  │                          ║
- ║             │                  │         │                          ║
- ║             └──────────────────┘         │                          ║
- ║                       │                  │                          ║
- ║             ┌──────────────────┐   FindingsCorrelator               ║
- ║             │ CustomRuleEngine │   ⛓️  Chain Detection               ║
- ║             │  287 bundled     │                                     ║
- ║             │   + N manual     │                                     ║
- ║             └──────────────────┘                                     ║
- ╚══════════════════════════════════════════════════════════════════════╝
-```
+- **`EndpointClassifier`** — guesses the semantic shape of an endpoint (REST resource, GraphQL,
+  gRPC-Web, static asset) so downstream detectors can skip probes that don't make sense for it.
+- **`SeverityRecalibrator`** — adjusts a finding's declared severity based on runtime context (e.g.
+  auth-required endpoint vs. public, presence of a working PoC) rather than a fixed per-category table.
 
-The extension registers itself as a native **`ScanCheck`** with Burp's scanner. It doesn't fight Burp — it *extends* it, invisibly, seamlessly, surgically.
-
-The **`DetectorContext`** is the single shared nerve wire that gives every detector access to everything it needs:
-the Montoya API · `ScanSettings` · `FindingsStore` · `CollaboratorClient` · `IdentityRegistry`.
-
-One wire. Sixteen hunters. Seven watchers. Zero noise.
+<img src="svg/diagram-stats.svg" alt="stat bar"/>
 
 ---
 
-<br>
-
-## 🔴 02 · A C T I V E · D E T E C T O R S · — · T H E · H U N T E R S
-
-> *Active detectors don't wait. They reach into the target and pull the truth out.*
-
-Each detector fires only against insertion points it was born for. No spray-and-pray. No wasted requests. Surgical precision on every probe.
 
 ---
 
-### 🩸 `[ 01 ]` · SQL INJECTION · *The Classic Killer — Three Ways to Bleed*
+## 🎯 Layer 2 — Classic Payload Detectors
 
-> `SqlErrorBasedDetector` · `SqlBooleanBasedDetector` · `SqlTimeBasedDetector` · `SqlPayloads`
+Payload/regex-driven checks, each confirmed with real evidence (not just "looks suspicious") before
+being raised. Every card below links to the Java class implementing it.
 
-SQLi isn't one bug. It's three. And LawCyBug.pro hunts all three independently.
+<table><tr><td><img src="svg/icon-sqli.svg" alt="SQL Injection" width="56"/></td><td>
+### SQL Injection
+`SqlErrorBasedDetector · SqlBooleanBasedDetector · SqlTimeBasedDetector`
 
-**🔴 Error-Based** — The loud kill. Injects payloads that rip database-native error strings out of the response. One regex match against a known signature and it's confirmed. No timing. No guesswork. MySQL screams. Oracle bleeds. PostgreSQL breaks. It's over.
+Three independent confirmation strategies: DB error-string fingerprinting, boolean-blind differential response comparison (via `ResponseDiff`), and time-based blind with jitter-tolerant timing analysis (`TimingUtils`).
+</td></tr></table>
 
-**🟡 Boolean-Blind — 3-Way Response Diffing** — The quiet kill. Uses `ResponseDiff` to run three requests and compare their structural DNA:
+<table><tr><td><img src="svg/icon-xss.svg" alt="Reflected XSS" width="56"/></td><td>
+### Reflected XSS
+`ReflectedXssDetector`
 
-```
-  ┌──────────────────────────────────────────────┐
-  │  Baseline  ──── original, untouched          │
-  │  TRUE      ──── ' AND '1'='1  (must match)   │
-  │  FALSE     ──── ' AND '1'='2  (must differ)  │
-  │                                              │
-  │  Finding raised ONLY when:                   │
-  │    diff(baseline, TRUE)  < threshold  ✓      │
-  │    diff(baseline, FALSE) > threshold  ✓      │
-  └──────────────────────────────────────────────┘
-```
+Context-aware — determines whether the reflection lands in an HTML body, an attribute, a `<script>` block, or a URL, and only reports when the specific context's breakout actually executes.
+</td></tr></table>
 
-If the TRUE payload looks identical to baseline but FALSE causes divergence — the database is listening. This eliminates every false positive that plagues naive "did the page change" boolean checkers.
+<table><tr><td><img src="svg/icon-cmdi.svg" alt="OS Command Injection" width="56"/></td><td>
+### OS Command Injection
+`BlindCommandInjectionDetector`
 
-**⏱️ Time-Based Blind — Statistical Confirmation** — The patient kill. Sends `SLEEP()` / `WAITFOR DELAY` / `pg_sleep()` across every major dialect and uses `TimingUtils` to statistically confirm the delay across multiple retests against baseline. A single slow response is **never** flagged. Only a *consistently* delayed one.
+Time-based and out-of-band blind command injection, using canary tokens (`CanaryUtils`) to avoid false positives from naturally slow endpoints.
+</td></tr></table>
 
-```
-  Engines:  MySQL · MSSQL · PostgreSQL · Oracle · SQLite
-  Method:   ≥ 3 retests · σ-normalized · baseline-subtracted
-```
+<table><tr><td><img src="svg/icon-ssrf.svg" alt="SSRF" width="56"/></td><td>
+### SSRF
+`SsrfCollaboratorDetector`
+
+Out-of-band confirmation via Burp Collaborator — a finding is only raised on an actual observed interaction, not a guess based on parameter naming.
+</td></tr></table>
+
+<table><tr><td><img src="svg/icon-ssti.svg" alt="Server-Side Template Injection" width="56"/></td><td>
+### Server-Side Template Injection
+`SstiDetector · SstiCollaboratorDetector`
+
+Arithmetic-confirmed detection (`{{7*7}}`-style) across 10 template engines, plus a separate Collaborator-OOB variant for output that's never reflected back.
+</td></tr></table>
+
+<table><tr><td><img src="svg/icon-openredirect.svg" alt="Open Redirect" width="56"/></td><td>
+### Open Redirect
+`OpenRedirectDetector`
+
+Validates the `Location` header actually points off-host rather than just checking the input parameter shape.
+</td></tr></table>
+
+<table><tr><td><img src="svg/icon-cors.svg" alt="CORS Misconfiguration" width="56"/></td><td>
+### CORS Misconfiguration
+`CorsDetector`
+
+Tests `null` origin, reflected arbitrary origin, and subdomain-wildcard trust, cross-checked against whether credentials are actually allowed.
+</td></tr></table>
+
+<table><tr><td><img src="svg/icon-jwt.svg" alt="JWT Misconfiguration" width="56"/></td><td>
+### JWT Misconfiguration
+`JwtMisconfigDetector`
+
+`alg:none`, weak/guessable HMAC secrets, `kid` header injection, and missing signature verification.
+</td></tr></table>
+
+<table><tr><td><img src="svg/icon-xxe.svg" alt="XXE" width="56"/></td><td>
+### XXE
+`XxeDetectors`
+
+Classic external entity, parameter entity, and OOB-Collaborator variants across common XML-consuming endpoints.
+</td></tr></table>
+
+<table><tr><td><img src="svg/icon-deserial.svg" alt="Insecure Deserialization" width="56"/></td><td>
+### Insecure Deserialization
+`InsecureDeserializationDetector`
+
+Java, PHP, and .NET gadget-chain signature detection plus OOB confirmation where safe.
+</td></tr></table>
+
+<table><tr><td><img src="svg/icon-traversal.svg" alt="Path Traversal" width="56"/></td><td>
+### Path Traversal
+`PathTraversalDetectors`
+
+Multiple encoding variants (raw, URL-encoded, double-encoded, Unicode) against known-sensitive file targets.
+</td></tr></table>
+
+<table><tr><td><img src="svg/icon-hostheader.svg" alt="Host Header Injection" width="56"/></td><td>
+### Host Header Injection
+`HostHeaderInjectionDetector`
+
+Password-reset-poisoning-style Host header tampering, checked for reflection in generated links/emails-adjacent output.
+</td></tr></table>
+
+<table><tr><td><img src="svg/icon-crlf.svg" alt="CRLF Injection" width="56"/></td><td>
+### CRLF Injection
+`CrlfInjectionDetector`
+
+Header/response-splitting via `\r\n` sequences in reflected input.
+</td></tr></table>
+
+<table><tr><td><img src="svg/icon-smuggling.svg" alt="HTTP Request Smuggling" width="56"/></td><td>
+### HTTP Request Smuggling
+`HttpRequestSmugglingDetector`
+
+Classic CL.TE and TE.CL desync detection using differential timing probes.
+</td></tr></table>
+
+<table><tr><td><img src="svg/icon-h2smuggling.svg" alt="HTTP/2 Smuggling" width="56"/></td><td>
+### HTTP/2 Smuggling
+`Http2SmugglingDetector`
+
+H2.TE / H2.CL downgrade-smuggling variants specific to HTTP/2 → HTTP/1.1 backend translation.
+</td></tr></table>
+
+<table><tr><td><img src="svg/icon-hpp.svg" alt="HTTP Parameter Pollution" width="56"/></td><td>
+### HTTP Parameter Pollution
+`HttpParameterPollutionDetector`
+
+Duplicate-parameter handling differences between front-end and back-end parsers.
+</td></tr></table>
+
+<table><tr><td><img src="svg/icon-xpath.svg" alt="XPath Injection" width="56"/></td><td>
+### XPath Injection
+`XPathInjectionDetector`
+
+Boolean-blind XPath injection with dedicated payload sets in `SqlPayloads`-adjacent tables.
+</td></tr></table>
+
+<table><tr><td><img src="svg/icon-nosql.svg" alt="NoSQL Injection" width="56"/></td><td>
+### NoSQL Injection
+`NoSqlInjectionDetector`
+
+MongoDB-style operator injection (`$ne`, `$gt`, `$where`) with boolean-blind confirmation.
+</td></tr></table>
+
+<table><tr><td><img src="svg/icon-ldap.svg" alt="LDAP Injection" width="56"/></td><td>
+### LDAP Injection
+`LdapDetectors`
+
+Filter-injection payloads targeting authentication and search filters.
+</td></tr></table>
+
+<table><tr><td><img src="svg/icon-protopollution.svg" alt="Prototype Pollution" width="56"/></td><td>
+### Prototype Pollution
+`PrototypePollutionDetector`
+
+`__proto__` / `constructor.prototype` payloads with response-side pollution confirmation.
+</td></tr></table>
+
+<table><tr><td><img src="svg/icon-cachepoisoning.svg" alt="Web Cache Poisoning" width="56"/></td><td>
+### Web Cache Poisoning
+`WebCachePoisoningDetector`
+
+Unkeyed-input cache poisoning via header/parameter probes that check whether a poisoned response is actually served back on a clean request.
+</td></tr></table>
+
+<table><tr><td><img src="svg/icon-cachedeception.svg" alt="Web Cache Deception" width="56"/></td><td>
+### Web Cache Deception
+`WebCacheDeceptionDetector`
+
+Static-extension path confusion that tricks a cache into storing a dynamic, sensitive response.
+</td></tr></table>
+
+<table><tr><td><img src="svg/icon-fileupload.svg" alt="Insecure File Upload" width="56"/></td><td>
+### Insecure File Upload
+`InsecureFileUploadDetector`
+
+Extension/MIME-type bypass attempts and polyglot file detection.
+</td></tr></table>
+
+<table><tr><td><img src="svg/icon-log4shell.svg" alt="Log4Shell" width="56"/></td><td>
+### Log4Shell
+`Log4ShellDetectors`
+
+JNDI lookup injection across common header/parameter injection points, OOB-confirmed.
+</td></tr></table>
+
+<table><tr><td><img src="svg/icon-csvinjection.svg" alt="CSV/Formula Injection" width="56"/></td><td>
+### CSV/Formula Injection
+`CsvFormulaInjectionDetector`
+
+Detects unsanitized formula-prefix characters (`=`, `+`, `-`, `@`) reaching exportable CSV/Excel output.
+</td></tr></table>
+
+<table><tr><td><img src="svg/icon-saml.svg" alt="SAML/SSO Security" width="56"/></td><td>
+### SAML/SSO Security
+`SamlSecurityDetector`
+
+Signature-wrapping and weak-signature checks on SAML assertions.
+</td></tr></table>
+
+<table><tr><td><img src="svg/icon-grpc.svg" alt="gRPC-Web / Connect-RPC Security" width="56"/></td><td>
+### gRPC-Web / Connect-RPC Security
+`GrpcWebSecurityDetector`
+
+Protocol-specific auth and input-validation checks for gRPC-Web and Connect-RPC endpoints.
+</td></tr></table>
+
+<table><tr><td><img src="svg/icon-k8s.svg" alt="Kubernetes API Exposure" width="56"/></td><td>
+### Kubernetes API Exposure
+`KubernetesApiExposureDetector`
+
+Detects exposed Kubernetes API server endpoints reachable through the tested application.
+</td></tr></table>
+
+<table><tr><td><img src="svg/icon-webauthn.svg" alt="WebAuthn/FIDO2 Downgrade" width="56"/></td><td>
+### WebAuthn/FIDO2 Downgrade
+`WebAuthnDowngradeDetector`
+
+Checks whether a WebAuthn flow can be downgraded to a weaker second factor.
+</td></tr></table>
+
+<table><tr><td><img src="svg/icon-headers.svg" alt="Security Headers" width="56"/></td><td>
+### Security Headers
+`SecurityHeadersDetector`
+
+CSP, HSTS, X-Frame-Options, and related header presence/strength (passive).
+</td></tr></table>
+
+<table><tr><td><img src="svg/icon-info.svg" alt="Information Disclosure" width="56"/></td><td>
+### Information Disclosure
+`InfoDisclosureDetector`
+
+Stack traces, debug endpoints, internal IPs, and comment leakage (passive).
+</td></tr></table>
 
 ---
 
-### 🎭 `[ 02 ]` · REFLECTED XSS · *Two-Phase Context Warfare*
-
-> `ReflectedXssDetector`
-
-Naive XSS scanners throw `<script>alert(1)</script>` at every parameter and hope the page breaks. This is not that.
-
-**Phase 1 — Context Reconnaissance:** A unique canary token is injected first. The detector surgically examines *where* it lands in the DOM:
-
-```
-  ● Raw HTML body        →  HTML context
-  ● Inside tag attribute →  ATTRIBUTE context
-  ● Inside <script>      →  SCRIPT context
-  ● Inside <!-- -->      →  COMMENT context
-```
-
-**Phase 2 — Precision Strike:** A perfectly shaped payload is crafted for the exact context detected:
-
-```
-  HTML       →  <img src=x onerror=alert(document.domain)>
-  ATTRIBUTE  →  "><svg onload=alert(document.domain)>
-  SCRIPT     →  ';alert(document.domain);//
-  COMMENT    →  --><svg onload=alert(document.domain)>
-```
-
-A finding is only raised when Phase 2's shaped payload is **confirmed as rendered** — not just echoed back in a string.
 
 ---
 
-### 💻 `[ 03 ]` · BLIND OS COMMAND INJECTION · *The Shell Whisperer*
+## ⚙️ Layer 3 — Workflow Engine
 
-> `BlindCommandInjectionDetector`
+The stateful foundation everything in Layer 4 is built on — the thing that turns "send one request,
+check the response" into "replay this request as a different user, diff the structured result, and
+decide if that's actually an authorization bypass."
 
-No error messages. No output. Just silence — and a pause that tells everything.
+<table><tr><td><img src="svg/icon-identityregistry.svg" alt="SessionIdentity / IdentityRegistry" width="56"/></td><td>
+### SessionIdentity / IdentityRegistry
+Named credential sets (Victim / Attacker / Admin / Custom), configured once in the **Identities** tab, reusable by every detector instead of each one inventing its own "secondary session header" setting.
+</td></tr></table>
 
-Time-based blind detection across every major execution environment:
+<table><tr><td><img src="svg/icon-objectgraph.svg" alt="ObjectGraph" width="56"/></td><td>
+### ObjectGraph
+Passively learns `{resourceType: id}` pairs from *every* request URL and JSON response body Burp observes. Feeds REST and GraphQL detectors alike — this is how BOLA replay knows which object IDs exist to try.
+</td></tr></table>
 
-| 🖥️ Platform | 💉 Payload Style |
-|:---:|:---|
-| POSIX — bash / sh | `; sleep 9;` · `\|\| sleep 9 \|\|` · `` `sleep 9` `` |
-| Windows — cmd.exe | `& timeout /t 9 &` · `\| timeout /t 9` |
-| PowerShell | `; Start-Sleep 9;` · `\| Start-Sleep -s 9` |
+<table><tr><td><img src="svg/icon-responsesimilarity.svg" alt="ResponseSimilarityEngine" width="56"/></td><td>
+### ResponseSimilarityEngine
+Structural JSON diff: same key-shape + types but different data values is the actual signature of a successful authorization bypass, not just "the response changed length."
+</td></tr></table>
 
-Same `TimingUtils` statistical engine as SQLi. The shell sleeps. The clock tells the truth.
+<table><tr><td><img src="svg/icon-chainguard.svg" alt="WorkflowEngine / ChainGuard" width="56"/></td><td>
+### WorkflowEngine / ChainGuard
+Chainable, identity-switchable request sequences, gated by Safe Mode, a per-chain request budget, and inter-request throttling — the same guardrail machinery the AI layer reuses.
+</td></tr></table>
 
----
-
-### 🌐 `[ 04 ]` · SSRF · *The Server That Calls Home*
-
-> `SsrfCollaboratorDetector`
-
-This detector doesn't guess. It *proves*.
-
-A unique Burp Collaborator payload is generated for each probe and injected into every URL-shaped parameter and header. The finding is raised only when Burp's Collaborator server records an **actual DNS resolution or HTTP callback** from the target infrastructure — irrefutable proof that the server reached out to attacker-controlled infrastructure.
-
-```
-  Injection targets:   URL parameters · Host headers · Referer · X-Forwarded-For
-  Confirmation:        Real DNS callback + HTTP interaction via Collaborator
-  Evidence:            Full interaction log shipped with every finding
-```
-
-> 🔑 *Requires Burp Suite Professional + Collaborator configured. Silently stands down on Community Edition — no errors, no ghost findings.*
+<img src="svg/diagram-identities.svg" alt="identities diagram"/>
 
 ---
 
-### 🧩 `[ 05 ]` · SERVER-SIDE TEMPLATE INJECTION · *Math That Shouldn't Exist*
-
-> `SstiDetector`
-
-If `{{7*7}}` comes back as `49`, something is very wrong — and very exploitable.
-
-Arithmetic-confirmation payloads across **10 template engines**:
-
-```
-  ┌──────────────────────────────────────────────────────────────┐
-  │  Jinja2  ·  Twig  ·  Smarty  ·  FreeMarker  ·  Velocity    │
-  │  Pebble  ·  Thymeleaf  ·  Mako  ·  Handlebars  ·  ERB      │
-  └──────────────────────────────────────────────────────────────┘
-```
-
-Engine-specific syntax tested: `{{7*7}}` · `${7*7}` · `<%= 7*7 %>` · `#{7*7}` · `[#assign x=7*7]${x}`
-
-A finding is raised only when `49` appears in the **exact context** of the injection point — not elsewhere on the page.
 
 ---
 
-### 🔓 `[ 06 ]` · OAuth 2.0 / OIDC · *Where Identities Bleed*
+## 🔗 Layer 4 — Cross-Identity & Chain Detectors
 
-> `OAuthSecurityDetector` — Active + Passive
+Everything here requires at least one non-default identity configured — see
+[Identities & Setup](#-identities--cross-identity-setup).
 
-The OAuth flow is where identity breaks. LawCyBug.pro targets `authorize`, `callback`, and `token` endpoints specifically — not generic traffic — because these checks are meaningless everywhere else.
+<table><tr><td><img src="svg/icon-crossidentity.svg" alt="Cross-Identity BOLA/IDOR Replay" width="56"/></td><td>
+### Cross-Identity BOLA/IDOR Replay
+`CrossIdentityBolaDetector`
 
-| 🎯 Check | 🔬 Mode | 💣 Severity |
-|:---|:---:|:---:|
-| Missing / predictable `state` — OAuth CSRF | Passive | 🔴 HIGH |
-| Missing PKCE `code_challenge` on public clients | Passive | 🟠 MEDIUM |
-| Auth code / access token leaking into `Referer` | Passive | 🔴 HIGH |
-| `redirect_uri` accepted with loose / open match | **Active Probe** | 🚨 CRITICAL |
-| Implicit flow `response_type=token` in use | Passive | 🟠 MEDIUM |
+Replays a VICTIM's object-scoped request as ATTACKER, using `ObjectGraph`-learned IDs, and applies `ResponseSimilarityEngine` to confirm the ATTACKER genuinely received the VICTIM's data shape.
+</td></tr></table>
 
-The `redirect_uri` active check is surgical: it replays the authorize request with a subtly modified destination — subdomain swap, path append, URL encoding bypass, scheme confusion — and confirms whether the server still hands over a token to the wrong address.
+<table><tr><td><img src="svg/icon-idor.svg" alt="IDOR (single-identity)" width="56"/></td><td>
+### IDOR (single-identity)
+`IdorAuthorizationDetector`
+
+Sequential/predictable-ID enumeration checks that don't require a second identity — a lighter-weight companion to the cross-identity variant.
+</td></tr></table>
+
+<table><tr><td><img src="svg/icon-privesc.svg" alt="Privilege Escalation Chains" width="56"/></td><td>
+### Privilege Escalation Chains
+`PrivilegeEscalationChainDetector`
+
+Attempts a role/permission change as a lower-privileged identity, then runs a **follow-up self-lookup** to confirm the change actually persisted server-side — not just that the mutating request returned `200 OK`.
+</td></tr></table>
+
+<table><tr><td><img src="svg/icon-race.svg" alt="Race Conditions" width="56"/></td><td>
+### Race Conditions
+`RaceConditionDetector`
+
+Fires concurrent requests at single-use or limited-use endpoints (coupon codes, withdrawal limits) and checks whether more redemptions succeeded than should have been possible.
+</td></tr></table>
+
+<table><tr><td><img src="svg/icon-takeover.svg" alt="Account Takeover" width="56"/></td><td>
+### Account Takeover
+`AccountTakeoverDetector`
+
+Password-reset and account-linking flow abuse — token predictability, host-header-poisoned reset links, and identity-confusion during linking.
+</td></tr></table>
+
+<table><tr><td><img src="svg/icon-massassignment.svg" alt="Mass Assignment" width="56"/></td><td>
+### Mass Assignment
+`MassAssignmentConfirmDetector`
+
+Injects unexpected fields (like `isAdmin: true`) into write requests and **confirms** via follow-up read whether the server actually persisted the extra field.
+</td></tr></table>
+
+<table><tr><td><img src="svg/icon-authzbypass.svg" alt="Authorization Bypass" width="56"/></td><td>
+### Authorization Bypass
+`AuthzBypassDetector`
+
+Method/path-based authorization bypass — verb tampering, trailing-slash/case variants, and header-based auth-check bypasses.
+</td></tr></table>
+
+<table><tr><td><img src="svg/icon-businesslogic.svg" alt="Business Logic Abuse" width="56"/></td><td>
+### Business Logic Abuse
+`BusinessLogicAbuseDetector`
+
+Negative-value tampering (negative quantity → refund) and single-use-code reuse, both requiring the workflow engine's chaining to set up a valid before/after comparison.
+</td></tr></table>
+
+<table><tr><td><img src="svg/icon-oauth.svg" alt="OAuth/OIDC Security Suite" width="56"/></td><td>
+### OAuth/OIDC Security Suite
+`OAuthSecurityDetector`
+
+Redirect URI validation, state-parameter CSRF, PKCE downgrade, and token-leakage-via-referrer checks across the OAuth/OIDC flow.
+</td></tr></table>
+
+<table><tr><td><img src="svg/icon-graphql.svg" alt="GraphQL Security Suite" width="56"/></td><td>
+### GraphQL Security Suite
+`GraphQlSecurityDetector`
+
+Introspection exposure, batching/aliasing-based rate-limit bypass, and object-graph-fed authorization checks specific to GraphQL's single-endpoint model.
+</td></tr></table>
+
+<table><tr><td><img src="svg/icon-websocket.svg" alt="WebSocket Security" width="56"/></td><td>
+### WebSocket Security
+`WebSocketSecurityDetector`
+
+Origin validation and authentication checks specific to the WebSocket handshake and message flow.
+</td></tr></table>
+
+<img src="svg/icon-findingscorrelator.svg" alt="correlator" width="64"/>
+
+**`FindingsCorrelator`** raises a consolidated `[CHAIN]` issue when known-chainable finding pairs
+(e.g. an IDOR *plus* a mass-assignment on the same host) land together — the whole point being that a
+chain is often more severe than the sum of its parts, and a report should say so explicitly.
 
 ---
 
-### 🕸️ `[ 07 ]` · GRAPHQL SECURITY · *The Schema That Leaks Secrets*
-
-> `GraphQlSecurityDetector` — Active + Passive
-
-GraphQL is not HTTP. Most scanners treat it like it is. This one doesn't.
-
-Auto-fingerprints GraphQL endpoints from traffic heuristics, then runs a precision check suite against confirmed endpoints only:
-
-| 🔍 Check | 🔬 Mode |
-|:---|:---:|
-| Introspection enabled on production-looking endpoints | Passive + Active |
-| Query batching accepted — DoS / auth-bypass amplification | Active |
-| Field aliasing / duplication — query-cost bypass | Active |
-| Excessive query depth accepted without limit | Active |
-| `__typename` / suggestion leakage when introspection disabled | Active |
-| GET-based GraphQL — CSRF attack surface | Passive |
-| Missing Content-Type enforcement | Passive |
 
 ---
 
-### 🆔 `[ 08 ]` · IDOR / BOLA · *The Object That Forgets Its Owner*
+## 🤖 Layer 5 — AI-Assisted Features (all opt-in)
 
-> `IdorAuthorizationDetector` · `CrossIdentityBolaDetector`
+Works with any OpenAI-compatible chat completions endpoint (OpenRouter, Cloudflare AI Gateway, a
+self-hosted gateway) — configured once in **Settings**, API key held in memory for the session only,
+**never persisted or logged**.
 
-Two complementary engines. Both confirm, neither guess.
+<table><tr><td><img src="svg/icon-ai-triage.svg" alt="AI Triage" width="56"/></td><td>
+### AI Triage
+`AiTriageClient`
 
-**`IdorAuthorizationDetector`** — Direct confirmation. Replays a victim's exact request under the attacker's session. If the attacker receives the victim's data — confirmed BOLA. Not "the parameter looks like an ID." *Actual data returned to the wrong identity.*
+One finding's evidence sent on request for a real-vs-false-positive judgment with reasoning. You stay the final decision-maker — this is a second opinion, not an auto-accept/reject switch.
+</td></tr></table>
 
-**`CrossIdentityBolaDetector`** — Object-graph-driven. The passive facet silently builds an `ObjectGraph` from *all* proxied traffic — `URL → {resourceType, resourceId}` — at zero cost, zero extra requests. The active facet then replays cross-identity and uses `ResponseSimilarityEngine` to score whether the attacker received meaningfully similar data — not a differently-shaped 200 OK error page wearing a success costume.
+<table><tr><td><img src="svg/icon-ai-chain.svg" alt="AI Chain Synthesis" width="56"/></td><td>
+### AI Chain Synthesis
+`AiChainSynthesizer`
 
-```
-  Setup:  Log in as Victim in browser A · Log in as Attacker in browser B
-          Paste Attacker session token into Settings → Identity Registry
-          Scan any Victim request — detectors replay it as Attacker automatically
-```
+Sends the full findings set for a host and asks the model to propose multi-step attack-chain hypotheses beyond the built-in `FindingsCorrelator` templates. **Read-only analysis** — proposes for manual review, executes nothing itself.
+</td></tr></table>
+
+<table><tr><td><img src="svg/icon-ai-adaptive.svg" alt="AI Adaptive Exploit" width="56"/></td><td>
+### AI Adaptive Exploit
+`AiAdaptiveExploitEngine`
+
+Multi-turn exploitation attempt against a single finding, with the AI's own claim **cross-checked against `ExploitEvidenceValidator`'s independent, per-category evidence signatures** before anything is classified CONFIRMED.
+</td></tr></table>
+
+<table><tr><td><img src="svg/icon-ai-mutator.svg" alt="AI Payload Mutator" width="56"/></td><td>
+### AI Payload Mutator
+`AiPayloadMutator`
+
+Generates candidate payloads for an insertion point, fires each one, and independently validates the response rather than trusting the AI's own claim of success.
+</td></tr></table>
+
+<table><tr><td><img src="svg/icon-ai-recon.svg" alt="AI Recon Agent" width="56"/></td><td>
+### AI Recon Agent
+`AiReconAgent`
+
+Passive-surface reconnaissance assistant — summarizes observed endpoints, parameters, and technology signals for the host currently in scope.
+</td></tr></table>
+
+<table><tr><td><img src="svg/icon-ai-memory.svg" alt="AI Pentest Memory" width="56"/></td><td>
+### AI Pentest Memory
+`AiPentestMemory`
+
+Session-scoped context store so multi-turn AI features (Adaptive Exploit, Agent Loop) retain what they've already tried against a given target instead of repeating themselves.
+</td></tr></table>
+
+<table><tr><td><img src="svg/icon-ai-toolexec.svg" alt="AI Tool Registry / Executor" width="56"/></td><td>
+### AI Tool Registry / Executor
+`AiToolRegistry · AiToolExecutor`
+
+The tool-calling contract the AI agent uses to actually issue HTTP requests — every tool call still routes through `WorkflowEngine`/`ChainGuard`, so Safe Mode applies exactly as it does to built-in detectors.
+</td></tr></table>
+
+<table><tr><td><img src="svg/icon-ai-agentloop.svg" alt="AI Agent Loop" width="56"/></td><td>
+### AI Agent Loop
+`AiAgentLoop`
+
+The turn-taking loop (observe → reason → act → observe) underneath the higher-level Adaptive Exploit and Autonomous Orchestrator features.
+</td></tr></table>
 
 ---
 
-### 🏃 `[ 09 ]` · RACE CONDITIONS · *When Time Is the Vulnerability*
-
-> `RaceConditionDetector`
-
-Some bugs can't be found by looking at one request. They only exist in the gap between two.
-
-LawCyBug.pro implements James Kettle's **last-byte sync / barrier-burst technique**:
-
-```
-  Step 1  ──  Build N identical copies of the target request
-  Step 2  ──  Submit all to a thread pool behind a CountDownLatch barrier
-  Step 3  ──  Fire simultaneously — as close as the JVM allows
-  Step 4  ──  Count how many returned a state-changing success
-  Step 5  ──  If more than one won where only one should — RACE CONDITION
-```
-
-Only fires against insertion points that look like single-use resources: coupon codes · vote endpoints · wallet operations · invite links. Idempotent GETs are ignored.
 
 ---
 
-### 👑 `[ 10 ]` · PRIVILEGE ESCALATION CHAIN · *The Role That Shouldn't Exist*
+## 🧠 Layer 6 — Autonomous Exploit Orchestrator
 
-> `PrivilegeEscalationChainDetector`
+<img src="svg/diagram-orchestrator-loop.svg" alt="orchestrator loop" width="420"/>
 
-Two steps. Because one step proves nothing.
+`ai/orchestrator/` — a fully autonomous **discover → plan → execute → review** loop across every
+unprocessed finding, highest-risk chains first (declared severity, step count, HIGH-severity finding
+count, with an in-progress boost for chains already partway through). Respects **Safe Mode**/
+**ChainGuard** and a hard action cap, and logs everything it does to `AutonomousRunHistory` for
+after-the-fact review.
 
-**Step 1 — The Injection** *(Mutating — Safe Mode aware)*: Merges privileged fields into the JSON body and fires the request as the Victim:
+| Phase | What happens |
+|---|---|
+| **Discover** | Scans `FindingsStore` for unprocessed findings and ranks candidate chains by risk |
+| **Plan** | Builds a step sequence using `WorkflowEngine` primitives, respecting the configured action cap |
+| **Execute** | Runs the plan through the same `ChainGuard`-gated request machinery every other detector uses |
+| **Review** | Validates outcomes against `ExploitEvidenceValidator`, updates confidence, and records the run in `AutonomousRunHistory` |
+
+**Off by default, and requires you to explicitly click Start** — this is the one feature in the
+whole extension that keeps running without a per-action click, so it gets an explicit two-step opt-in
+(enable AI in Settings, *then* start Autonomous Mode) rather than a single checkbox.
+
+---
+
+
+---
+
+## 📜 Custom Rules Engine
+
+<img src="svg/icon-rulesengine.svg" alt="rules engine" width="64"/>
+
+`CustomRuleEngine` + `MiniJson`/`JsonLite`/`JsonUtil` — a hand-written JSON parser (no external
+dependency) that loads rule definitions from `src/main/resources/rules/` and lets you extend detection
+without touching Java. A rule is a matcher against request/response content plus a severity and a
+category tag; **287 rules ship bundled** covering framework-specific misconfigurations, default
+credential banners, and vendor-specific information disclosure signatures.
+
+Example rule shape (see `example-rules.json` in the repo root for the full reference):
 
 ```json
-"role":"admin"  ·  "isAdmin":true  ·  "is_admin":true
-"permissions":["*"]  ·  "roleId":1  ·  "groups":["administrators"]
+{
+  "id": "exposed-git-directory",
+  "category": "INFO_DISCLOSURE",
+  "severity": "MEDIUM",
+  "match": { "path": "/.git/config", "statusCode": 200 },
+  "confidence": "FIRM",
+  "description": "Exposed .git directory allows source disclosure."
+}
 ```
 
-**Step 2 — The Verification** *(Read-only)*: Immediately follows with `GET /me` as the *same identity*. Checks whether the privileged value actually *persisted* server-side.
-
-A finding is raised only when **Step 2 confirms the role change took effect** — not when the API merely echoes the injected field in Step 1's response (which every API does, regardless of whether it did anything with it).
-
-> *This is what separates real mass-assignment findings from the mountains of false positives most scanners produce.*
+Drop custom `.json` rule files into the rules directory and reload the extension — no recompilation
+needed.
 
 ---
 
-### 🧮 `[ 11 ]` · BUSINESS LOGIC ABUSE · *The Bug the Rules Can't See*
-
-> `BusinessLogicAbuseDetector`
-
-Some vulnerabilities cannot be expressed in payload/regex. The application is doing exactly what you asked — and that's the problem.
-
-**💸 Negative-Value Tampering:** Flips `quantity`, `price`, `amount`, `total` fields negative on cart/order/wallet/transfer endpoints. A naive `total = price × quantity` lets a negative quantity reduce a bill below zero. A negative `amount` on a transfer endpoint reverses the direction of money flow.
-
-**🎟️ Sequential Coupon Reuse:** Replays coupon/voucher application back-to-back (non-concurrent) to catch cases where the server never marks a single-use code as consumed at all — distinct from race condition bugs where it marks it consumed *too slowly*. Both are real bug classes. Both pay. Both need different proof.
-
-Uses `ChainGuard` Safe Mode — these detectors change real state. Enable them only when your engagement scope permits.
 
 ---
 
-### 🔀 `[ 12 ]` · AUTHORIZATION BYPASS · *Every Door Has a Back Window*
+## 📊 Confidence System
 
-> `AuthzBypassDetector`
+<img src="svg/diagram-confidence-ladder.svg" alt="confidence ladder"/>
+<img src="svg/icon-confidence.svg" alt="confidence" width="64"/>
 
-Tests every classic and modern ACL bypass technique:
+Every finding is rated on a three-step ladder, and the ladder only moves **up** on independent
+evidence — never down through wishful thinking:
 
-```
-  HTTP method override      →  X-HTTP-Method-Override: DELETE · _method=PUT
-  Path traversal             →  /api/admin/../user · /api//admin/
-  Case manipulation          →  /API/Admin · /api/ADMIN
-  Parent path rewind         →  /api/v1/user → /api/v1/admin
-  Header-based access        →  X-Original-URL · X-Forwarded-For: 127.0.0.1
-```
-
----
-
-### 📇 `[ 13 ]` · MASS ASSIGNMENT · *The Field That Should Not Be Writeable*
-
-> `MassAssignmentConfirmDetector`
-
-Single-request mass assignment detection targeting JSON body parameters. Injects a curated set of sensitive field candidates and reads the response for acceptance signals — field echoed, no validation error, response body diverges from baseline. Distinct from the privilege escalation chain: this catches simpler cases that don't need a verification step.
+- **TENTATIVE** — a single signal fired (e.g. one boolean-blind SQLi differential). Worth
+  investigating, not yet worth reporting as-is.
+- **FIRM** — an independent confirmation pass (a second, differently-shaped probe, or a workflow-level
+  before/after check) agreed with the original signal.
+- **CERTAIN** — exploit evidence was independently validated by `ExploitEvidenceValidator` against a
+  category-specific signature (a Collaborator interaction, a persisted state change confirmed by a
+  follow-up read, a canary token echoed back). This is the only tier AI-driven exploitation is allowed
+  to claim on its own say-so — it still has to pass the same validator every built-in detector uses.
 
 ---
 
-### 🔑 `[ 14 ]` · ACCOUNT TAKEOVER DETECTION · *The Session That Changes Hands*
-
-> `AccountTakeoverDetector`
-
-Targets password reset, email change, and 2FA bypass flows. Detects predictable token patterns, token reuse across sessions, host header injection in reset-email generation, and missing origin validation on sensitive account-mutation endpoints.
 
 ---
 
-### 🌍 `[ 15 ]` · OPEN REDIRECT · *Every Link Is a Loaded Gun*
+## 🛡️ Safe Mode — Why It Exists
 
-> `OpenRedirectDetector`
+<img src="svg/icon-safemode.svg" alt="safe mode" width="64"/>
 
-Four redirect mechanisms. Dozens of bypass techniques.
+<img src="svg/diagram-safemode-gate.svg" alt="safe mode gate"/>
 
-```
-  Redirect types:    Location header · meta http-equiv refresh · JS window.location
-  Bypass techniques: //evil.com · \/\/evil.com · %2F%2Fevil.com
-                     javascript:// · Unicode normalization · scheme confusion
-```
+Every detector step is tagged, at the source, as either **read-only** or **mutating**. `ChainGuard`
+checks that tag before a step is allowed to fire:
 
----
+- **Safe Mode ON (default):** read-only steps run normally; any step marked mutating is **blocked**
+  and logged as skipped, whether it's a hand-written detector, an AI Adaptive Exploit attempt, or an
+  Autonomous Orchestrator action.
+- **Safe Mode OFF:** mutating steps are allowed to run — this is what's required for things like
+  Race Condition testing, Mass Assignment confirmation, and Business Logic Abuse checks to do
+  anything at all, since verifying those *is* a state change by definition.
 
-### 🌐 `[ 16 ]` · CORS MISCONFIGURATION · *The Trust That Goes Both Ways*
-
-> `CorsDetector` — Active + Passive
-
-| ☠️ Attack | 🔬 Probe |
-|:---|:---|
-| Origin reflection | Sends arbitrary `Origin:` header — checks if reflected in `ACAO` |
-| Null-origin bypass | `Origin: null` — accepted by legacy CDN/cache configs |
-| Wildcard + credentials | `ACAO: *` + `ACAC: true` — the classic misconfiguration |
-| Prefix / suffix bypass | `Origin: evil.trusted-domain.com` — weak `startsWith` ACL |
+Turn Safe Mode off only against a target where you have explicit authorization to send
+state-mutating test traffic, and ideally against a staging/test environment rather than production.
 
 ---
 
-### 🔐 `[ PASSIVE-ACTIVE ]` · JWT MISCONFIGURATION · *The Token With No Spine*
-
-> `JwtMisconfigDetector` — Active + Passive
-
-| 💀 Attack | 🔬 Technique |
-|:---|:---|
-| `alg:none` forgery | Strips signature · sets `"alg":"none"` in header |
-| Empty signature bypass | Submits `header.payload.` with empty third segment |
-| Token in URL *(passive)* | Flags JWT values appearing in query parameters |
-| Structural issues *(passive)* | Weak `HS256` on RS key · missing `exp` claim |
 
 ---
 
-<br>
+## 👤 Identities & Cross-Identity Setup
 
-## 🟡 03 · P A S S I V E · D E T E C T O R S · — · T H E · W A T C H E R S
+<img src="svg/diagram-identities.svg" alt="identities"/>
 
-> *They don't ask questions. They listen to everything — and remember everything.*
+Open the **Identities** tab and configure at minimum:
 
-Passive detectors analyze all traffic Burp has already proxied. Zero additional requests. Zero footprint. Maximum intelligence.
+1. A **VICTIM** identity — session token/cookie for a normal, lower-privileged account.
+2. An **ATTACKER** identity — session token/cookie for a second, separate account of the same or
+   lower privilege level.
+3. Optionally an **ADMIN** identity, if your target has an elevated role you're authorized to test
+   privilege-escalation *toward*.
 
----
-
-### 🛡️ SECURITY HEADERS AUDIT · *The Missing Armour*
-
-> `SecurityHeadersDetector`
-
-Every HTTP response is audited. No exceptions.
-
-| 🔒 Header | 🔬 What's Checked |
-|:---|:---|
-| `Content-Security-Policy` | Present · no `unsafe-inline` / `unsafe-eval` / wildcard `*` |
-| `Strict-Transport-Security` | Present · `max-age` ≥ 6 months · `includeSubDomains` set |
-| `X-Frame-Options` | `DENY` or `SAMEORIGIN` — not the deprecated `ALLOW-FROM` |
-| `Referrer-Policy` | `no-referrer` or `strict-origin` variants enforced |
-| `Permissions-Policy` | Camera · microphone · geolocation locked down |
-| `X-Content-Type-Options` | `nosniff` present |
+Without at least VICTIM + ATTACKER configured, `CrossIdentityBolaDetector`,
+`PrivilegeEscalationChainDetector`, and the Business Logic detectors **silently skip** rather than
+erroring — check the Identities tab first if you expect findings from these categories and see none.
 
 ---
 
-### 🕵️ INFORMATION DISCLOSURE · *The Secret That Slipped*
-
-> `InfoDisclosureDetector`
-
-Hunts high-value secrets and debug artifacts in every response body:
-
-```
-  🔑  AWS Access Keys      →  AKIA[0-9A-Z]{16}
-  🐙  GitHub Tokens        →  ghp_[A-Za-z0-9]{36}
-  🤖  OpenAI API Keys      →  sk-[A-Za-z0-9]{48}
-  🌐  Google API Keys      →  AIza[0-9A-Za-z\-_]{35}
-  💬  Slack Tokens         →  xox[baprs]-([0-9a-zA-Z]{10,48})
-  🔐  PEM Private Keys     →  -----BEGIN (RSA|EC|OPENSSH) PRIVATE KEY-----
-  💥  Stack Traces         →  NullPointerException · Traceback · Fatal error
-  📁  Internal Paths       →  /etc/passwd · C:\inetpub · /var/www
-  🔧  Debug Panels         →  /_profiler · /debug · phpinfo() · __debug__
-```
 
 ---
 
-<br>
+## 🖥️ UI Tour
 
-## 🧠 04 · A D V A N C E D · E N G I N E · — · T H E · B R A I N
-
-> *The intelligence layer that turns individual findings into attack narratives.*
-
----
-
-### ⛓️ FINDINGS CORRELATOR · *When Two Bugs Become One Weapon*
-
-> `FindingsCorrelator`
-
-Watches `FindingsStore` as findings arrive. Automatically detects when two individual findings — together — form a **known attack chain** that's worth far more than either alone:
-
-| ⚔️ Chain Name | 🔗 Components | 💣 Combined Impact |
-|:---|:---|:---:|
-| OAuth Token Theft | Open Redirect + OAuth on same host | 🚨 CRITICAL |
-| Auth Bypass → Data Exfil | CORS Misconfiguration + IDOR | 🚨 CRITICAL |
-| Persistent XSS + CSRF | Stored XSS + missing CSRF | 🔴 HIGH |
-| SQLi → Account Takeover | SQLi on auth endpoint + Login form | 🚨 CRITICAL |
-
-Chain findings are **additive** — originals still stand. The chain issue is a third, higher-level finding that tells you: *look at these two together first. This is your lead.*
+- <img src="svg/icon-detectorengine.svg" alt="Dashboard" width="32"/> **Dashboard** — Live findings feed as they're raised, filterable by category/confidence/severity.
+- <img src="svg/icon-identityregistry.svg" alt="Identities" width="32"/> **Identities** — Configure VICTIM/ATTACKER/ADMIN/Custom identities used by cross-identity detectors.
+- <img src="svg/icon-settings.svg" alt="Settings" width="32"/> **Settings** — Toggle detector categories, Safe Mode, AI provider/model/API key, request throttling.
+- <img src="svg/icon-ai-orchestrator.svg" alt="Autonomous" width="32"/> **Autonomous** — Start/stop the Autonomous Orchestrator, view its action cap and current run status.
+- <img src="svg/icon-history.svg" alt="History" width="32"/> **History** — Every past scan/autonomous run, replayable via `ScanHistoryTracker` / `AutonomousRunHistory`.
+- <img src="svg/icon-audit.svg" alt="Audit Log" width="32"/> **Audit Log** — Every request the extension itself sent (not just Burp's own traffic), via `RequestAuditLog`.
+- <img src="svg/icon-export.svg" alt="Export" width="32"/> **Export** — Generate an HTML report (`HtmlReportGenerator`) or export raw findings (`FindingsExporter`).
 
 ---
 
-### 🔁 WORKFLOW ENGINE · *Attack Flows, Not Attack Points*
-
-> `WorkflowEngine`
-
-Executes named, multi-step HTTP sequences where later steps reference values extracted from earlier responses. Real attack flows. Not single-request probes.
-
-```
-  Step 1  →  POST /api/register           extract: userId from "data.user.id"
-  Step 2  →  GET  /api/users/{userId}     confirm own data accessible ✓
-  Step 3  →  [switch to Attacker identity]
-  Step 4  →  GET  /api/users/{userId}     confirm attacker receives victim data ✗
-             └── BOLA CONFIRMED ──────────────────────────────────────────────►
-```
-
-Used by: `PrivilegeEscalationChainDetector` · `BusinessLogicAbuseDetector` · `CrossIdentityBolaDetector`
 
 ---
 
-### 🧠 RESPONSE SIMILARITY ENGINE · *Is This Really the Same Data?*
+## 📤 Findings Export
 
-> `ResponseSimilarityEngine`
+<img src="svg/icon-export.svg" alt="export" width="64"/>
 
-Token-level structural comparison of HTTP responses — immune to dynamic content (timestamps, nonces, CSRF tokens, session IDs). Scores structural similarity, not byte equality. Used by BOLA/IDOR detectors to confirm that "attacker got victim's data" rather than "both got a differently-shaped 200 OK error page."
-
----
-
-### 🗺️ OBJECT GRAPH · *The Map the Target Doesn't Know You're Drawing*
-
-> `ObjectGraph`
-
-Silently builds `URL → {resourceType, resourceId}` from every request Burp proxies. Zero extra requests. Zero performance cost. When an active BOLA check fires later, the graph already knows which object types exist, which IDs have been seen, and which endpoints serve which resources.
+`HtmlReportGenerator` produces a self-contained, client-shareable HTML report grouped by host,
+severity, and confidence, with full request/response evidence per finding. `FindingsExporter` handles
+machine-readable export (JSON) for feeding into other tooling or a ticketing system integration.
 
 ---
 
-### ⏱️ TIMING UTILS · *The Clock That Lies — Until It Doesn't*
-
-> `TimingUtils`
-
-Statistical delay confirmation to prevent network jitter from becoming a false positive:
-
-```
-  1.  Measure baseline response time (N samples)
-  2.  Send timed payload — measure response time
-  3.  Re-send baseline — confirm network is stable
-  4.  Flag anomaly ONLY if: (payload_time - baseline_mean) > k × baseline_stddev
-```
-
-`k` (sigma multiplier) and `N` (sample count) are tunable in Settings. Conservative defaults. Zero flukes.
 
 ---
 
-### 🔍 RESPONSE DIFF · *The Shape of Truth*
+## 🕓 History, Audit & Suppression
 
-> `ResponseDiff`
+<table><tr><td><img src="svg/icon-history.svg" alt="ScanHistoryTracker / AutonomousRunHistory" width="56"/></td><td>
+### ScanHistoryTracker / AutonomousRunHistory
+Every scan and every autonomous run is recorded and browsable after the fact — what ran, what was found, what the orchestrator decided and why.
+</td></tr></table>
 
-Token-aware structural diffing used by boolean-blind SQLi and all differential detectors. Ignores dynamic content. Scores *structural* changes. Makes boolean-blind detection reliable even on pages with high dynamic content — countdown timers, live feeds, CSRF tokens on every load.
+<table><tr><td><img src="svg/icon-audit.svg" alt="RequestAuditLog" width="56"/></td><td>
+### RequestAuditLog
+A complete log of every request the *extension itself* originated (as distinct from your own manual Burp traffic) — essential for after-action review of what an autonomous run actually did.
+</td></tr></table>
 
----
-
-### 🔒 CHAIN GUARD · *The Safety That Keeps the Hunter Honest*
-
-> `ChainGuard`
-
-Two safety controls over every multi-step chain detector:
-
-**🟢 Safe Mode:** When enabled, skips any step marked `mutating=true`. Use this on pre-production environments where you don't want the extension actually submitting orders or applying discount codes during a scan. Chain detectors run their read-only verification steps only.
-
-**📊 Request Budget:** Each chain has a maximum request count. Exceeding it aborts the chain and logs a warning — not an infinite loop on a complex workflow.
-
----
-
-<br>
-
-## 📜 05 · C U S T O M · R U L E · E N G I N E · — · 2 8 7 · R U L E S · O F · P O W E R
-
-> `CustomRuleEngine` · `MiniJson` *(zero-dependency JSON parser — no external libs)*
-
-Write custom passive or active checks in JSON. No Java. No rebuild. No restart.
-
-Four professional rule packs ship inside the jar and **load automatically** every time the extension starts:
-
-```
-  ╔════════════════════════════════════════════════════════════════════╗
-  ║   Pack                                           Rules   Focus    ║
-  ╠════════════════════════════════════════════════════════════════════╣
-  ║   01-p1-advanced-rules.json                        23    Web      ║
-  ║   02-p1-mega-ruleset.json                         139    Mixed    ║
-  ║   03-p1-web3-cloud-cms-webserver-rules.json        90    Modern   ║
-  ║   04-p1-mobile-iot-mq-cicd-rules.json              35    Deep     ║
-  ╠════════════════════════════════════════════════════════════════════╣
-  ║   TOTAL                                           287             ║
-  ╚════════════════════════════════════════════════════════════════════╝
-```
-
-### 📝 Rule Schema
-
-```json
-[
-  {
-    "name": "OS Command Injection - Error Signature",
-    "type": "active",
-    "severity": "high",
-    "confidence": "firm",
-    "description": "Shell metacharacter caused command execution output in response.",
-    "remediation": "Never pass user input to a shell. Use parameterized APIs.",
-    "conditions": [
-      {
-        "payload": ";id;",
-        "match": "response_body",
-        "pattern": "(?i)(uid=\\d+\\(.*?\\)|gid=\\d+\\(.*?\\))"
-      }
-    ]
-  },
-  {
-    "name": "PEM Private Key in Response",
-    "type": "passive",
-    "severity": "critical",
-    "confidence": "certain",
-    "description": "A PEM-encoded private key was found in the HTTP response.",
-    "conditions": [
-      {
-        "match": "response_body",
-        "pattern": "-----BEGIN (RSA|EC|OPENSSH) PRIVATE KEY-----"
-      }
-    ]
-  }
-]
-```
-
-**Rule types:**
-- `"type": "passive"` — pattern-matches every response body/header. Zero extra requests.
-- `"type": "active"` — injects `payload` at each insertion point, evaluates `match` against `response_body` · `response_headers` · `status`
-
-### 🎛️ Rule Controls in the UI
-
-| 🔘 Button | ⚡ Effect |
-|:---|:---|
-| **➕ Load from editor** | Adds your rules on top of bundled packs |
-| **➕ Load from .json file** | Same — from a file on disk |
-| **↻ Reload bundled rules** | Re-reads all four packs from the jar |
-| **Clear manual rules** | Removes your rules only — bundled packs untouched |
-| **Clear ALL rules** | Wipes everything — use Reload to restore |
-
-> 💡 *To permanently add a 5th pack: drop your `.json` into `src/main/resources/rules/`, add its path to `BUNDLED_RULE_RESOURCES` in `CustomRuleEngine.java`, rebuild.*
+<table><tr><td><img src="svg/icon-classifier.svg" alt="FindingsSuppressionEngine" width="56"/></td><td>
+### FindingsSuppressionEngine
+Mark a finding (or a whole category, on a given host) as suppressed — accepted risk, known false positive, out of scope — so it stops resurfacing on every re-scan.
+</td></tr></table>
 
 ---
 
-<br>
-
-## 🖥️ 06 · B U R P · U I · — · T H E · C O M M A N D · C E N T E R
-
-A **"LawCyBug.pro"** tab appears in Burp's main UI the moment the extension loads. Three sub-tabs. One command center.
 
 ---
 
-**📊 Dashboard** — Live findings table. Severity · Confidence · Detector · Host · Endpoint · Summary. Color-coded by severity. Click any row to see the full request/response evidence. Findings persist across Burp sessions — close Burp, reopen, your findings are still there.
+## ⚙️ Configuration Reference
 
-**⚙️ Settings** — Per-detector toggles · Scan intensity · Timing sigma threshold · Sample count · Victim/Attacker identity management · Safe Mode toggle.
-
-**📝 Rules Editor** — Live JSON editor. Load, reload, clear rules without restarting anything. Counter always shows: `Custom JSON Rules (287 bundled + N manual = X total)`
+| Setting | Default | Notes |
+|---|---|---|
+| Safe Mode | **ON** | Blocks every mutating step. See [Safe Mode](#️-safe-mode--why-it-exists). |
+| AI features | **OFF** | Requires an OpenAI-compatible endpoint URL + API key, set per session, never persisted. |
+| Autonomous Mode | **OFF** | Requires AI enabled *and* an explicit Start click. Has a hard action cap. |
+| Detector categories | **All ON** | Toggle individually in Settings if you want to scope a scan (e.g. passive-only). |
+| Request throttling | Configurable | Inter-request delay used by `WorkflowEngine` chains and the Autonomous Orchestrator. |
+| Collaborator | Uses Burp's own | OOB detectors (SSRF, SSTI-blind, Log4Shell, XXE) reuse Burp's configured Collaborator server. |
 
 ---
 
-<br>
 
-## 🔨 07 · B U I L D I N G · & · L O A D I N G · — · F O R G I N G · T H E · W E A P O N
+---
 
-### Prerequisites
+## 🗂️ Project Layout
 
-```
-  ☕  JDK 17+
-  🔨  Apache Maven
-  🌐  Internet access (to pull montoya-api:2026.4 from Maven Central — once)
-```
-
-### Build
-
-```bash
-# From the project root — 30 seconds on first run, 5 on subsequent
-mvn clean package
-```
-
-```
-  Output:  target/lawcybug-pro-scanner-1.0.0.jar
-```
-
-> 🔑 *The jar has zero runtime dependencies. Montoya API is `provided` scope — Burp supplies it at runtime. The JSON parser is hand-written (`MiniJson.java`). No fat-jar shading needed.*
-
-### Load into Burp Suite
-
-```
-  Burp Suite  →  Extensions  →  Installed  →  Add
-    Extension type:  Java
-    Extension file:  target/lawcybug-pro-scanner-1.0.0.jar
-```
-
-On successful load, the Output tab prints:
-
-```
-  [LawCyBug.pro] Loading v1.0.0 ...
-  [LawCyBug.pro] Bundled rules: 4/4 pack(s) loaded, 287 rule(s) total.
-  [LawCyBug.pro] Loaded. Active detectors: 16  Passive detectors: 7
+```text
+lawcybug/
+├── pom.xml
+├── README.md
+├── CHANGELOG.md
+├── EULA.md
+├── example-rules.json
+├── docs/
+│   ├── svg/                  # every diagram + icon used in this README
+│   └── img/                  # (reserved for additional screenshots)
+└── src/
+    ├── main/java/pro/lawcybug/scanner/
+    │   ├── core/             # DetectorEngine, ActiveDetector/PassiveDetector, IssueFactory, Finding
+    │   ├── detectors/        # 30+ classic + chain detector packages (sqli/, xss/, ssrf/, bola/, ...)
+    │   ├── workflow/         # SessionIdentity, ObjectGraph, ResponseSimilarityEngine, ChainGuard
+    │   ├── ai/               # Triage, ChainSynthesizer, AdaptiveExploit, PayloadMutator, 
+    │   │   ├── orchestrator/ #   Autonomous discover→plan→execute→review loop
+    │   │   ├── recon/        #   AiReconAgent
+    │   │   ├── tools/        #   AiToolRegistry / AiToolExecutor
+    │   │   └── memory/       #   AiPentestMemory
+    │   ├── rules/            # CustomRuleEngine, MiniJson/JsonLite/JsonUtil
+    │   ├── history/          # ScanHistoryTracker, AutonomousRunHistory
+    │   ├── audit/            # RequestAuditLog
+    │   ├── export/           # HtmlReportGenerator, FindingsExporter
+    │   ├── profile/          # EngagementProfile
+    │   ├── classification/   # EndpointClassifier, VulnCategoryMapper
+    │   ├── learning/         # passive learning support for ObjectGraph-adjacent detectors
+    │   ├── autoexploit/      # AutoExploitEngine, AiAdaptiveExploitEngine wiring
+    │   ├── ui/               # LawCyBugTab and all Burp UI panels
+    │   └── util/             # shared helpers
+    ├── main/resources/rules/ # 287 bundled JSON rule definitions
+    └── test/                 # JUnit 5 test suite
 ```
 
 ---
 
-<br>
-
-## ⚙️ 08 · S E T U P · & · C O N F I G U R A T I O N · — · A R M I N G · T H E · H U N T E R
-
-### Basic Usage
-
-Detectors run automatically inside Burp's normal scanner workflow:
-
-- **Active scanning:** Right-click any request → *"Do active scan"*
-- **Passive scanning:** All proxied traffic analyzed automatically — always on
-
-Findings appear in the **LawCyBug.pro Dashboard** and Burp's native Issues / site map simultaneously.
 
 ---
 
-### Setting Up IDOR / BOLA / Chain Detectors
+## 🔬 Step-by-Step: How a Scan Actually Runs
 
-These detectors need two authenticated sessions:
+A concrete walkthrough, from opening Burp to seeing a finding, for someone who wants to understand
+the mechanics rather than just the feature list:
 
-```
-  1.  Log in to the target as Victim    (Account A) in Browser A
-  2.  Log in to the target as Attacker  (Account B) in Browser B
-  3.  Settings sub-tab → Identity Registry
-      → Paste Attacker's session cookie or Authorization header value
-  4.  Scan any Victim request
-      → IDOR/BOLA detectors automatically replay it as Attacker
-```
+**1. Load the extension**  
+Burp calls `LawCyBugExtension`'s entry point, which registers the `LawCyBugTab` UI, initializes `DetectorEngine` with every detector package, and wires up `FindingsStore`, `ScanHistoryTracker`, and `RequestAuditLog`.
 
----
+**2. Traffic starts flowing**  
+As you browse through Burp's Proxy (or run Burp's own Scanner, or send from Repeater — configurable in Settings), each request/response pair is handed to `DetectorEngine.process(...)`.
 
-### SSRF / OOB Collaborator
+**3. Passive pass**  
+Every enabled `PassiveDetector` inspects the pair immediately — this includes `ObjectGraph` silently learning `{resourceType: id}` pairs in the background, whether or not any cross-identity detector is enabled yet.
 
-```
-  Project options → Misc → Burp Collaborator Server → configure
-```
+**4. Active pass (if enabled)**  
+Enabled `ActiveDetector`s decide, per request, whether it's a plausible target (via `EndpointClassifier`) and if so fire their own probe requests — gated through `ChainGuard` if the probe is tagged mutating.
 
-On Community Edition — OOB detectors silently stand down. No errors. No ghost findings.
+**5. Evidence validation**  
+Any raw signal — an error string, a timing delta, a Collaborator interaction — is checked against `ExploitEvidenceValidator`'s category-specific signature before it's allowed to become a `Finding` at all. This is what prevents "the response was 40ms slower" alone from becoming a SQLi finding.
 
----
+**6. Confidence assignment**  
+The new finding starts at TENTATIVE, or FIRM/CERTAIN immediately if the detector's confirmation pass already ran (see the Confidence System section).
 
-### Safe Mode
+**7. Correlation**  
+`FindingsCorrelator` checks whether this finding, combined with anything already known on the same host, matches a known chainable pattern — if so, a `[CHAIN]` finding is raised alongside the individual one.
 
-Enable **Safe Mode** in Settings before scanning any environment where scan activity creates real-world side effects. Chain detectors will skip their mutating steps and run only read-only verification — no orders submitted, no coupons applied, no emails sent.
+**8. Suppression check**  
+`FindingsSuppressionEngine` checks whether this exact finding (or its category on this host) was previously suppressed — if so it's recorded but not surfaced again in the live feed.
 
----
+**9. Storage & display**  
+The finding lands in `FindingsStore` and appears immediately in the Dashboard tab, filterable by category, confidence, and severity.
 
-<br>
+**10. Optional: AI Triage**  
+You can select any TENTATIVE finding and request `AiTriageClient` review — it receives the finding's evidence and returns a real-vs-false-positive judgment with reasoning, entirely on request.
 
-## 📁 09 · P R O J E C T · S T R U C T U R E · — · T H E · A N A T O M Y
-
-```
-  src/main/java/pro/lawcybug/scanner/
-  │
-  ├── 🔱 LawCyBugExtension.java              Entry point — wires everything together
-  │
-  ├── core/                                   The Engine Room
-  │   ├── ActiveDetector.java                 Interface: audit(request, point, context)
-  │   ├── PassiveDetector.java                Interface: passiveAudit(reqres, context)
-  │   ├── DetectorEngine.java                 ScanCheck registered with Burp's scanner
-  │   ├── DetectorContext.java                Shared wire: API · settings · store · collab
-  │   ├── FindingsStore.java                  Thread-safe storage + session persistence
-  │   ├── FindingsCorrelator.java             Chain detection across multiple findings
-  │   ├── IssueFactory.java                   AuditIssue builder with evidence formatting
-  │   ├── RequestFingerprintGuard.java        Deduplication — never scan the same point twice
-  │   ├── ScanSettings.java                   All user-configurable settings
-  │   └── Finding.java                        Finding value object
-  │
-  ├── detectors/                              The Hunters
-  │   ├── sqli/
-  │   │   ├── SqlErrorBasedDetector.java      🩸 Error-based SQLi
-  │   │   ├── SqlBooleanBasedDetector.java    🟡 Boolean-blind — 3-way diff
-  │   │   ├── SqlTimeBasedDetector.java       ⏱️  Time-based — statistical
-  │   │   └── SqlPayloads.java                📚 Payload library
-  │   ├── xss/
-  │   │   └── ReflectedXssDetector.java       🎭 Two-phase context-aware XSS
-  │   ├── cmdi/
-  │   │   └── BlindCommandInjectionDetector   💻 Blind OS command injection
-  │   ├── ssrf/
-  │   │   ├── SsrfCollaboratorDetector.java   🌐 OOB SSRF via Collaborator
-  │   │   └── SstiDetector.java               🧩 SSTI — 10 template engines
-  │   ├── cors/
-  │   │   └── CorsDetector.java               🌐 CORS — 4 attack classes
-  │   ├── redirect/
-  │   │   └── OpenRedirectDetector.java       🌍 Open redirect — all vectors
-  │   ├── jwt/
-  │   │   └── JwtMisconfigDetector.java       🔐 JWT — alg:none · empty sig
-  │   ├── headers/
-  │   │   └── SecurityHeadersDetector.java    🛡️  Security header audit
-  │   ├── info/
-  │   │   └── InfoDisclosureDetector.java     🕵️  Secrets + stack traces
-  │   ├── idor/
-  │   │   └── IdorAuthorizationDetector.java  🆔 IDOR cross-identity confirmation
-  │   ├── bola/
-  │   │   └── CrossIdentityBolaDetector.java  🗺️  Object-graph-driven BOLA
-  │   ├── race/
-  │   │   └── RaceConditionDetector.java      🏃 Barrier-burst race detection
-  │   ├── massassignment/
-  │   │   └── MassAssignmentConfirmDetector   📇 Mass assignment
-  │   ├── authzbypass/
-  │   │   └── AuthzBypassDetector.java        🔀 Authorization bypass
-  │   ├── takeover/
-  │   │   └── AccountTakeoverDetector.java    🔑 Account takeover vectors
-  │   ├── atochain/
-  │   │   └── PrivilegeEscalationChain...     👑 Two-step priv-esc chain
-  │   ├── businesslogic/
-  │   │   └── BusinessLogicAbuseDetector      🧮 Negative values + coupon reuse
-  │   ├── graphql/
-  │   │   └── GraphQlSecurityDetector.java    🕸️  GraphQL — 7 check types
-  │   └── oauth/
-  │       └── OAuthSecurityDetector.java      🔓 OAuth 2.0 / OIDC — 5 checks
-  │
-  ├── rules/
-  │   ├── CustomRuleEngine.java               📜 JSON rule loader + evaluator
-  │   └── MiniJson.java                       ⚡ Zero-dependency JSON parser
-  │
-  ├── workflow/
-  │   ├── WorkflowEngine.java                 🔁 Multi-step HTTP chain execution
-  │   ├── ChainGuard.java                     🔒 Safe Mode + request budget
-  │   ├── IdentityRegistry.java               👥 Victim/attacker session store
-  │   ├── SessionIdentity.java                🪪 Session header value object
-  │   ├── ObjectGraph.java                    🗺️  Passive URL → resource map
-  │   ├── ResponseSimilarityEngine.java       🧠 Structural response scoring
-  │   └── JsonLite.java                       ⚡ Lightweight JSON extractor
-  │
-  ├── ui/
-  │   └── LawCyBugTab.java                    🖥️  Dashboard · Settings · Rules
-  │
-  └── util/
-      ├── TimingUtils.java                    ⏱️  Statistical timing confirmation
-      ├── ResponseDiff.java                   🔍 Token-aware structural diff
-      └── CanaryUtils.java                    🎯 Unique canary token generation
-
-  src/main/resources/rules/
-      ├── 01-p1-advanced-rules.json            23 rules
-      ├── 02-p1-mega-ruleset.json             139 rules
-      ├── 03-p1-web3-cloud-cms-webserver...    90 rules
-      └── 04-p1-mobile-iot-mq-cicd-rules...   35 rules
-
-  ════════════════════════════════════════════════════════
-  ~3,500 lines of original Java  ·  28 source files  ·  287 bundled rules
-  ════════════════════════════════════════════════════════
-```
+**11. Optional: Autonomous follow-up**  
+If Autonomous Mode is running, unprocessed findings are periodically picked up by the Orchestrator, ranked, and — within Safe Mode and the action cap — worked through the discover→plan→execute→review loop described in Layer 6.
 
 ---
 
-<br>
-
-## ⚠️ 10 · E T H I C A L · U S E · — · T H E · C O D E
-
-```
-  ╔══════════════════════════════════════════════════════════════════╗
-  ║                                                                  ║
-  ║   This extension is for AUTHORIZED security testing and          ║
-  ║   LEGITIMATE bug bounty programs ONLY.                           ║
-  ║                                                                  ║
-  ║   The power of this tool is matched only by the responsibility   ║
-  ║   of the person holding it.                                      ║
-  ║                                                                  ║
-  ╚══════════════════════════════════════════════════════════════════╝
-```
-
-- ✅ Only run against targets you have **explicit written permission** to test
-- ✅ Always operate within the defined scope of your engagement or bug bounty program
-- ✅ Enable **Safe Mode** on any environment where scan activity creates real-world side effects
-- ✅ Confirm your engagement permits **OOB testing** before running SSRF/Collaborator checks
-- ✅ Chain detectors that run mutating steps require explicit scope permission — they change real state
 
 ---
 
-<br>
+## 📦 Detector Package Census
+
+A full accounting of every package under `src/main/java/pro/lawcybug/scanner/detectors/`, for anyone
+auditing coverage against their own checklist:
+
+| Package | Coverage |
+|---|---|
+| `detectors/sqli/` | SQL injection — error, boolean-blind, time-based |
+| `detectors/xss/` | Reflected cross-site scripting, context-aware |
+| `detectors/cmdi/` | Blind OS command injection |
+| `detectors/ssrf/` | Server-side request forgery, Collaborator-confirmed |
+| `detectors/cors/` | CORS misconfiguration |
+| `detectors/headers/` | Security header presence/strength (passive) |
+| `detectors/redirect/` | Open redirect |
+| `detectors/jwt/` | JWT misconfiguration |
+| `detectors/xxe/` | XML external entity injection |
+| `detectors/deserial/` | Insecure deserialization |
+| `detectors/traversal/` | Path traversal |
+| `detectors/hostheader/` | Host header injection |
+| `detectors/crlf/` | CRLF / header injection |
+| `detectors/smuggling/` | HTTP request smuggling (HTTP/1.1) |
+| `detectors/h2smuggling/` | HTTP/2 downgrade smuggling |
+| `detectors/hpp/` | HTTP parameter pollution |
+| `detectors/xpath/` | XPath injection |
+| `detectors/nosql/` | NoSQL injection |
+| `detectors/ldap/` | LDAP injection |
+| `detectors/protopollution/` | Prototype pollution |
+| `detectors/cachepoisoning/` | Web cache poisoning |
+| `detectors/cachedeception/` | Web cache deception |
+| `detectors/fileupload/` | Insecure file upload |
+| `detectors/log4shell/` | Log4Shell / JNDI injection |
+| `detectors/csvinjection/` | CSV/formula injection |
+| `detectors/saml/` | SAML/SSO security |
+| `detectors/grpc/` | gRPC-Web / Connect-RPC security |
+| `detectors/k8s/` | Kubernetes API exposure |
+| `detectors/webauthn/` | WebAuthn/FIDO2 downgrade |
+| `detectors/info/` | Information disclosure (passive) |
+| `detectors/bola/` | Cross-identity BOLA/IDOR replay |
+| `detectors/idor/` | Single-identity IDOR |
+| `detectors/atochain/` | Account takeover chains |
+| `detectors/race/` | Race conditions |
+| `detectors/massassignment/` | Mass assignment |
+| `detectors/authzbypass/` | Authorization bypass |
+| `detectors/businesslogic/` | Business logic abuse |
+| `detectors/oauth/` | OAuth/OIDC security suite |
+| `detectors/graphql/` | GraphQL security suite |
+| `detectors/websocket/` | WebSocket security |
+
+**40 detector packages**, matching the headline count — some packages contain more than
+one detector class (e.g. `xxe/` holds several `XxeDetectors` variants), which is why the Java-file
+count under `detectors/` is higher than the package count.
+
+---
+
+
+---
+
+## 🧭 Glossary
+
+| Term | Meaning |
+|---|---|
+| **Finding** | A single reported issue — category, severity, confidence, evidence, and the request/response that produced it. |
+| **Chain** | Two or more findings that, combined, represent a more severe issue than either alone — raised as a `[CHAIN]` finding by `FindingsCorrelator`. |
+| **Identity** | A named credential set (session token/cookie) representing one user account, configured in the Identities tab. |
+| **Object Graph** | The passively-learned map of `{resourceType: id}` pairs `ObjectGraph` builds from observed traffic. |
+| **Safe Mode** | The global switch that blocks any detector step tagged as state-mutating. |
+| **Confidence** | TENTATIVE / FIRM / CERTAIN — how independently confirmed a finding's evidence is. |
+| **ChainGuard** | The component that enforces Safe Mode, request budgets, and throttling on every multi-step workflow, built-in or AI-driven. |
+| **Autonomous Mode** | The orchestrator's self-driving discover→plan→execute→review loop, off by default. |
+| **Rule** | A JSON-defined match pattern loaded by `CustomRuleEngine`, extending detection without new Java code. |
+
+---
+
+
+---
+
+## 🛠️ Troubleshooting
+
+**Build fails with dependency resolution errors**  
+Confirm outbound access to Maven Central (`repo1.maven.org`) from your build machine — the sandbox this project was authored in has none, which is why the shipped jar should be treated as a convenience copy, not a verified release artifact.
+
+**Extension loads but the tab is empty**  
+Confirm you're on a Montoya-API-compatible Burp version — check `montoya.version` in `pom.xml` against your Burp Suite's supported API version.
+
+**No findings at all after browsing**  
+Check Settings — confirm the relevant detector categories are enabled and that Burp is actually routing traffic through the Proxy listener the extension is observing.
+
+**Cross-identity detectors produce nothing**  
+See the Identities section above — this category requires explicit VICTIM/ATTACKER setup and silently skips otherwise.
+
+**AI features do nothing when clicked**  
+Confirm an API key and a valid OpenAI-compatible endpoint URL are set in Settings — the AI layer makes no network calls at all until both are present and a specific AI action is triggered.
+
+---
+
+
+---
+
+## 🗺️ Roadmap
+
+See `CHANGELOG.md` for full version history. High-level direction:
+
+- [ ] Expand the bundled rule set beyond 287 rules
+- [ ] Additional AI-provider-specific prompt tuning for smaller local models
+- [ ] Deeper GraphQL query-cost / batching abuse detection
+- [ ] Richer HTML report theming and diff-view for re-scans
+
+---
+
+
+---
+
+## 🏷️ Version & Acknowledgments
+
+Current build: **`1.34.5`** (see `<version>` in `pom.xml`). Full history — including a `mvn clean
+package` run that caught two real, previously-latent bugs (`AiPentestMemory.clearSession()` and
+`AutonomousRunHistory.toMarkdown()` run numbering) — is in `CHANGELOG.md`.
+
+Built on the [Montoya API](https://portswigger.github.io/burp-extensions-montoya-api/) provided by
+PortSwigger's Burp Suite. No other runtime dependencies — the JSON handling (`MiniJson` / `JsonLite` /
+`JsonUtil`) and the rules engine are hand-written specifically to keep this a zero-dependency, single-jar
+extension.
+
+---
 
 <div align="center">
 
-```
-  ╔══════════════════════════════════════════════════════════════════════╗
-  ║                                                                      ║
-  ║        🕷️   LawCyBug.pro  ·  v0.1.0-tier1   🕷️                     ║
-  ║                                                                      ║
-  ║    16 active detectors  ·  7 passive watchers  ·  287 rules         ║
-  ║    ~3,500 lines of Java  ·  28 files  ·  0 dependencies             ║
-  ║                                                                      ║
-  ║         Built with 🖤 for hunters who need to be right.             ║
-  ║                                                                      ║
-  ╚══════════════════════════════════════════════════════════════════════╝
-```
+<img src="svg/banner-footer.svg" alt="LawCyBUG.pro footer"/>
 
-*"Others scan. You hunt."*
+*Made for people who have permission to break things.*
+
+</div>
+
+---
+
+<div align="center">
+
+[← back to README](../README.md)
+
+<img src="svg/banner-footer.svg" alt="LawCyBUG.pro footer"/>
 
 </div>
