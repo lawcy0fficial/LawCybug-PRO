@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 130" width="240" height="130" role="img" aria-label="Main + Test Files counter">
+<title>Main + Test Files</title>
+<rect width="240" height="130" rx="12" fill="#0d1117" stroke="#ff3df0" stroke-width="1.6"/>
+<text x="120" y="66" text-anchor="middle" font-family="'Consolas','Courier New',monospace" font-size="38" font-weight="800" fill="#ff3df0">
+  <animate attributeName="opacity" values="0.3;1;0.3" dur="2.6s" repeatCount="indefinite"/>
+  90/71
+</text>
+<text x="120" y="94" text-anchor="middle" font-family="'Consolas','Courier New',monospace" font-size="13" fill="#aab4c0">Main + Test Files</text>
+<rect x="20" y="108" width="200" height="6" rx="3" fill="#1c2530"/>
+<rect x="20" y="108" width="0" height="6" rx="3" fill="#ff3df0">
+  <animate attributeName="width" values="0;200;0" dur="4s" repeatCount="indefinite"/>
+</rect>
+</svg>

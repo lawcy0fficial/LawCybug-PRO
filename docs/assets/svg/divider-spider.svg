@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 40" width="100%" height="40" role="img" aria-label="section divider">
+<title>divider</title>
+<line x1="0" y1="20" x2="1000" y2="20" stroke="#39ff88" stroke-opacity="0.25" stroke-width="1.4"/>
+<g>
+  <path d="M0,-6 a8,8 0 1 0 0.01,0 M0,-6 L-18,-18 M0,-6 L18,-18 M0,-6 L-22,-2 M0,-6 L22,-2 M0,2 L-20,10 M0,2 L20,10 M0,2 L-16,20 M0,2 L16,20"
+        fill="none" stroke="#ff3df0" stroke-width="2" stroke-linecap="round" transform="translate(0,20) scale(0.6)">
+    <animateMotion path="M0,0 H1650" dur="9s" repeatCount="indefinite"/>
+  </path>
+</g>
+</svg>

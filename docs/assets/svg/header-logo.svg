@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 160" width="900" height="160" role="img" aria-label="LawCyBUG animated logo">
+<title>LawCyBUG</title>
+<defs>
+  <linearGradient id="lg1" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0%" stop-color="#39ff88"/>
+    <stop offset="55%" stop-color="#25e0ff"/>
+    <stop offset="100%" stop-color="#ff3df0"/>
+    <animate attributeName="x1" values="0;1;0" dur="6s" repeatCount="indefinite"/>
+    <animate attributeName="x2" values="1;2;1" dur="6s" repeatCount="indefinite"/>
+  </linearGradient>
+  <filter id="glow1" x="-50%" y="-50%" width="200%" height="200%">
+    <feGaussianBlur stdDeviation="5" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+</defs>
+<rect width="900" height="160" fill="#0a0e14" rx="16"/>
+<g transform="translate(60,80)">
+  <circle r="34" fill="none" stroke="#39ff88" stroke-width="2" opacity="0.5">
+    <animate attributeName="r" values="30;40;30" dur="2.6s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.7;0.1;0.7" dur="2.6s" repeatCount="indefinite"/>
+  </circle>
+  <path d="M0,-6 a8,8 0 1 0 0.01,0 M0,-6 L-18,-18 M0,-6 L18,-18 M0,-6 L-22,-2 M0,-6 L22,-2 M0,2 L-20,10 M0,2 L20,10 M0,2 L-16,20 M0,2 L16,20"
+        fill="none" stroke="#39ff88" stroke-width="2.6" stroke-linecap="round">
+    <animateTransform attributeName="transform" type="rotate" values="0;360" dur="14s" repeatCount="indefinite"/>
+  </path>
+</g>
+<text x="120" y="102" font-family="'Consolas','Courier New',monospace" font-size="72" font-weight="800" fill="url(#lg1)" filter="url(#glow1)">LawCyBUG</text>
+<text x="122" y="132" font-family="'Consolas','Courier New',monospace" font-size="17" letter-spacing="3" fill="#25e0ff" opacity="0.85">AI-POWERED AUTONOMOUS BURP SUITE EXTENSION</text>
+<rect x="122" y="140" width="0" height="2" fill="#39ff88">
+  <animate attributeName="width" values="0;520;520;0" keyTimes="0;0.4;0.85;1" dur="5s" repeatCount="indefinite"/>
+</rect>
+</svg>
